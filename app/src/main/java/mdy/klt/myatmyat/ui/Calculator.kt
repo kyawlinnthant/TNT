@@ -19,7 +19,7 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Calculator(name: String){
-    var text by remember { mutableStateOf("10") }
+    var total by remember { mutableStateOf("10") }
     var percentOfTotal by remember {
         mutableStateOf("0")
     }
@@ -56,10 +56,10 @@ fun Calculator(name: String){
         mutableStateOf("0")
     }
 
-    percentOfTotal = if (text.isEmpty()) {
+    percentOfTotal = if (total.isEmpty()) {
         0
     } else {
-        (text.toInt() * 0.1).roundToInt()
+        (total.toInt() * 0.1).roundToInt()
     }.toString()
 
     totalReturnAmount = if (winNumberAmount.isEmpty()) {
@@ -105,9 +105,9 @@ fun Calculator(name: String){
             Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Total Amount")
                 CommonTextField(
-                    text = text,
+                    text = total,
                     onValueChange = { value ->
-                        text = value
+                        total = value
                     },
                     colorScheme = darkColorScheme().copy(
                         primary = MaterialTheme.colorScheme.secondary.copy(0.2f)
@@ -120,7 +120,11 @@ fun Calculator(name: String){
                     text = percentOfTotal,
                     onValueChange = { value ->
                         percentOfTotal = value
-                        text = (percentOfTotal.toInt() * 10).toString()
+                        total = if(percentOfTotal!=""){
+                            (percentOfTotal.toInt() * 10).toString()
+                        } else {
+                            ""
+                        }
                     },
                     colorScheme = darkColorScheme().copy(
                         primary = MaterialTheme.colorScheme.secondary.copy(0.2f)
@@ -165,11 +169,12 @@ fun Calculator(name: String){
                     text = totalReturnAmount,
                     onValueChange = { value ->
                         totalReturnAmount = value
-                        winNumberAmount = if (totalReturnAmount.isNotEmpty()) {
-                            (totalReturnAmount.toInt() / 80).toString()
+                        winNumberAmount = if(totalReturnAmount!="") {
+                            (totalReturnAmount.toInt() / 80.0).roundToInt().toString()
                         } else {
-                            "0"
+                            ""
                         }
+
                     },
                     colorScheme = darkColorScheme().copy(
                         primary = MaterialTheme.colorScheme.secondary.copy(0.2f)
@@ -182,10 +187,10 @@ fun Calculator(name: String){
                     text = mustReturnAmount,
                     onValueChange = { value ->
                         mustReturnAmount = value
-                        totalReturnAmount = if (mustReturnAmount.isNotEmpty()) {
-                            ((mustReturnAmount.toInt() * 10.0)).toString()
+                        totalReturnAmount = if(mustReturnAmount!="") {
+                            (mustReturnAmount.toInt() * 10.0).roundToInt().toString()
                         } else {
-                            "0"
+                            ""
                         }
                     },
                     colorScheme = darkColorScheme().copy(primary = MaterialTheme.colorScheme.primaryContainer)
