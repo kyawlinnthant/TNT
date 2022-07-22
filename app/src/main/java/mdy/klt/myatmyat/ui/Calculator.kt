@@ -1,18 +1,24 @@
 package mdy.klt.myatmyat.ui
 
+import android.opengl.Visibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.materialIcon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mdy.klt.myatmyat.R
 import kotlin.math.roundToInt
 
 
@@ -55,6 +61,13 @@ fun Calculator(name: String){
     var profitForManager by remember {
         mutableStateOf("0")
     }
+    var passwordVisibility by remember {
+        mutableStateOf(true)
+    }
+
+    var icon= if(passwordVisibility) 
+        painterResource(id = R.drawable.ic_eye_close)
+    else painterResource(id = R.drawable.ic_eye_on)
 
     percentOfTotal = if (total.isEmpty()) {
         0
@@ -100,21 +113,35 @@ fun Calculator(name: String){
             colors = TopAppBarDefaults.smallTopAppBarColors(MaterialTheme.colorScheme.primary)
         )
     }) {
-        Column(modifier = Modifier.padding(it).padding(12.dp)) {
+        Column(modifier = Modifier
+            .padding(it)
+            .padding(12.dp)) {
             Text(text = "Lucky $name!", color = MaterialTheme.colorScheme.primary)
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Total Amount")
                 CommonTextField(
                     text = total,
                     onValueChange = { value ->
                         total = value
                     },
-                    colorScheme = darkColorScheme().copy(
-                        primary = MaterialTheme.colorScheme.secondary.copy(0.2f)
-                    )
+                    passwordVisibility = passwordVisibility
                 )
+                IconButton(onClick = {
+                    passwordVisibility = !passwordVisibility
+                }) {
+                    Icon(
+                        painter = icon,
+                        contentDescription = "Close Text",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(0.5f),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "10% of Total")
                 CommonTextField(
                     text = percentOfTotal,
@@ -126,44 +153,47 @@ fun Calculator(name: String){
                             ""
                         }
                     },
-                    colorScheme = darkColorScheme().copy(
-                        primary = MaterialTheme.colorScheme.secondary.copy(0.2f)
-                    )
+                    passwordVisibility = passwordVisibility
                 )
             }
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Commission Fee (17 %)")
                 CommonTextField(
                     text = commissionFee,
                     onValueChange = { value ->
                         commissionFee = value
                     },
-                    colorScheme = darkColorScheme().copy(primary = MaterialTheme.colorScheme.primaryContainer)
+                    passwordVisibility = passwordVisibility
                 )
             }
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Our Total Asset(%နှုတ်ပြီးစုစုပေါင်းကျန်ငွေ)")
                 CommonTextField(
                     text = totalLeft,
                     onValueChange = { value ->
                         totalLeft = value
                     },
-                    colorScheme = darkColorScheme().copy(primary = MaterialTheme.colorScheme.primaryContainer)
-                )
+                    passwordVisibility = passwordVisibility                )
             }
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Win number include?(ပေါက်ကြေးစုစုပေါင်း)")
                 CommonTextField(
                     text = winNumberAmount,
                     onValueChange = { value ->
                         winNumberAmount = value
                     },
-                    colorScheme = darkColorScheme().copy(
-                        primary = MaterialTheme.colorScheme.secondary.copy(0.2f)
-                    )
+                    passwordVisibility = passwordVisibility
                 )
             }
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Total return amount(လျော်ကြေးစုစုပေါင်း)")
                 CommonTextField(
                     text = totalReturnAmount,
@@ -176,12 +206,12 @@ fun Calculator(name: String){
                         }
 
                     },
-                    colorScheme = darkColorScheme().copy(
-                        primary = MaterialTheme.colorScheme.secondary.copy(0.2f)
-                    )
+                    passwordVisibility = passwordVisibility
                 )
             }
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Our return amount?(10%)")
                 CommonTextField(
                     text = mustReturnAmount,
@@ -193,37 +223,43 @@ fun Calculator(name: String){
                             ""
                         }
                     },
-                    colorScheme = darkColorScheme().copy(primary = MaterialTheme.colorScheme.primaryContainer)
+                    passwordVisibility = passwordVisibility
                 )
             }
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Our total profit")
                 CommonTextField(
                     text = ourTotalProfit,
                     onValueChange = { value ->
                         ourTotalProfit = value
                     },
-                    colorScheme = darkColorScheme().copy(primary = MaterialTheme.colorScheme.primaryContainer)
+                    passwordVisibility = passwordVisibility
                 )
             }
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Share Owner profit")
                 CommonTextField(
                     text = profitForShareOwner,
                     onValueChange = { value ->
                         profitForShareOwner = value
                     },
-                    colorScheme = darkColorScheme().copy(primary = MaterialTheme.colorScheme.primaryContainer)
+                    passwordVisibility = passwordVisibility
                 )
             }
-            Row(modifier = Modifier.padding(top = 10.dp).weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 CommonText(text = "Manager Profit")
                 CommonTextField(
                     text = profitForManager,
                     onValueChange = { value ->
                         profitForManager = value
                     },
-                    colorScheme = darkColorScheme().copy(primary = MaterialTheme.colorScheme.primaryContainer)
+                    passwordVisibility = passwordVisibility
                 )
             }
         }
@@ -235,7 +271,7 @@ private fun percentCalculator(percent: Int) {
 }
 
 @Composable
-fun CommonTextField(text: String, onValueChange: (String) -> Unit, colorScheme: ColorScheme) {
+fun CommonTextField(text: String, onValueChange: (String) -> Unit, passwordVisibility: Boolean) {
     BasicTextField(
         value = text,
         onValueChange = onValueChange,
@@ -246,14 +282,18 @@ fun CommonTextField(text: String, onValueChange: (String) -> Unit, colorScheme: 
         decorationBox = { innerTextField ->
             Row(
                 Modifier
-                    .background(MaterialTheme.colorScheme.onSurface, RoundedCornerShape(percent = 30))
+                    .background(
+                        MaterialTheme.colorScheme.onSurface,
+                        RoundedCornerShape(percent = 30)
+                    )
                     .padding(8.dp)
 
             ) {
                 // <-- Add this
                 innerTextField()
             }
-        }
+        },
+        visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation()
     )
 }
 
