@@ -1,6 +1,8 @@
 package mdy.klt.myatmyat.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -11,14 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -67,13 +66,20 @@ fun Calculator(name: String) {
     var profitForManager by remember {
         mutableStateOf("0")
     }
+
     var passwordVisibility by remember {
+        mutableStateOf(true)
+    }
+
+    var focusState by remember {
         mutableStateOf(true)
     }
 
     val icon = if (passwordVisibility)
         painterResource(id = R.drawable.ic_eye_close)
     else painterResource(id = R.drawable.ic_eye_on)
+
+    val keyboardController = LocalSoftwareKeyboardController.current
 
 
     percentOfTotal = if (total.isEmpty()) {
@@ -124,12 +130,18 @@ fun Calculator(name: String) {
             modifier = Modifier
                 .padding(it)
                 .padding(12.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {
+                    keyboardController?.hide()
+                }),
         ) {
-            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.weight(0.5f), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "Lucky $name!",
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(0.5f)
                 )
                 IconButton(onClick = {
                     passwordVisibility = !passwordVisibility
@@ -311,7 +323,6 @@ private fun percentCalculator(percent: Int) {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CommonTextField(text: String, onValueChange: (String) -> Unit, passwordVisibility: Boolean) {
-    val keyboardController = LocalSoftwareKeyboardController.current
     BasicTextField(
         value = text,
         onValueChange = onValueChange,
@@ -334,15 +345,7 @@ fun CommonTextField(text: String, onValueChange: (String) -> Unit, passwordVisib
             }
         },
         visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-        keyboardActions = KeyboardActions(onDone = KeyboardActions.Default.onNext)
 
-//        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-//        keyboardActions = KeyboardActions(
-//            onDone = {
-//                keyboardController?.hide()
-//                // do something here
-//            }
-//        )
     )
 }
 
