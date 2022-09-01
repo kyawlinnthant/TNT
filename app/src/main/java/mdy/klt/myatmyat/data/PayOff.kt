@@ -9,6 +9,7 @@ data class PayOff(
     @PrimaryKey(autoGenerate = true)
     val id : Long,
     val timeStamp : Long,
+    val totalBalance: Float,
     val netBalance : Float,
     val tnt : Float,
     val each : Float,

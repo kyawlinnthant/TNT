@@ -1,20 +1,19 @@
 package mdy.klt.myatmyat.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusState
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -23,7 +22,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import mdy.klt.myatmyat.R
+import mdy.klt.myatmyat.data.PayOff
 import kotlin.math.roundToInt
 
 
@@ -31,47 +37,65 @@ import kotlin.math.roundToInt
 @Composable
 fun Calculator(name: String) {
     var total by remember { mutableStateOf("10") }
-    var percentOfTotal by remember {
+    val vm: MyViewModel = hiltViewModel()
+    var logPayOff: Flow<List<PayOff>> = emptyFlow()
+    var id: MutableState<String> = remember {mutableStateOf("")}
+    var _payOff: MutableState<PayOff> = remember {
+        mutableStateOf(
+            PayOff(
+                id = 100L,
+                timeStamp = 100L,
+                totalBalance = 100f,
+                netBalance = 100f,
+                tnt = 100f,
+                each = 100f,
+                isMorning = false
+            )
+        )
+    }
+
+//    val payOff: MutableState<PayOff> get()
+    var percentOfTotal by rememberSaveable {
         mutableStateOf("0")
     }
 
-    var commissionFee by remember {
+    var commissionFee by rememberSaveable {
         mutableStateOf("0")
     }
 
-    var totalLeft by remember {
+    var totalLeft by rememberSaveable {
         mutableStateOf("0")
     }
 
-    var winNumberAmount by remember {
+    var winNumberAmount by rememberSaveable {
         mutableStateOf("0")
     }
 
-    var totalReturnAmount by remember {
+    var totalReturnAmount by rememberSaveable {
         mutableStateOf("0")
     }
 
-    var mustReturnAmount by remember {
+    var mustReturnAmount by rememberSaveable {
         mutableStateOf("0")
     }
 
-    var ourTotalProfit by remember {
+    var ourTotalProfit by rememberSaveable {
         mutableStateOf("0")
     }
 
-    var profitForShareOwner by remember {
+    var profitForShareOwner by rememberSaveable {
         mutableStateOf("0")
     }
 
-    var profitForManager by remember {
+    var profitForManager by rememberSaveable {
         mutableStateOf("0")
     }
 
-    var passwordVisibility by remember {
+    var passwordVisibility by rememberSaveable {
         mutableStateOf(true)
     }
 
-    var focusState by remember {
+    var focusState by rememberSaveable {
         mutableStateOf(true)
     }
 
@@ -85,7 +109,7 @@ fun Calculator(name: String) {
     percentOfTotal = if (total.isEmpty()) {
         0
     } else {
-        (total.toInt() * 0.1).roundToInt()
+        (total.toInt() * 0.2).roundToInt()
     }.toString()
 
     totalReturnAmount = if (winNumberAmount.isEmpty()) {
@@ -97,9 +121,12 @@ fun Calculator(name: String) {
     mustReturnAmount = if (totalReturnAmount.isEmpty()) {
         "0"
     } else {
-        (totalReturnAmount.toInt() * 0.1).roundToInt().toString()
+        (totalReturnAmount.toInt() * 0.2).roundToInt().toString()
     }
-    ourTotalProfit = if (totalLeft.isEmpty()) {
+
+    if (totalLeft.isEmpty()) {
+        "0"
+    } else if (totalLeft.toInt() < 0) {
         "0"
     } else {
         (totalLeft.toInt() - mustReturnAmount.toFloat()).roundToInt().toString()
@@ -107,13 +134,13 @@ fun Calculator(name: String) {
     profitForShareOwner = if (ourTotalProfit.isEmpty()) {
         "0"
     } else {
-        (ourTotalProfit.toInt() * 0.25).roundToInt().toString()
+        (ourTotalProfit.toInt() * 0.184).roundToInt().toString()
     }
 
     profitForManager = if (ourTotalProfit.isEmpty()) {
         "0"
     } else {
-        (ourTotalProfit.toInt() * 0.1).roundToInt().toString()
+        (ourTotalProfit.toInt() * 0.08).roundToInt().toString()
     }
 
     commissionFee = ((percentOfTotal.toInt() * 0.17).roundToInt()).toString()
@@ -134,8 +161,8 @@ fun Calculator(name: String) {
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {
-                    keyboardController?.hide()
-                }),
+                        keyboardController?.hide()
+                    }),
         ) {
             Row(modifier = Modifier.weight(0.5f), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -262,7 +289,7 @@ fun Calculator(name: String) {
                     onValueChange = { value ->
                         mustReturnAmount = value
                         totalReturnAmount = if (mustReturnAmount != "") {
-                            (mustReturnAmount.toInt() * 10.0).roundToInt().toString()
+                            (mustReturnAmount.toInt() * 20.0).roundToInt().toString()
                         } else {
                             ""
                         }
@@ -312,6 +339,48 @@ fun Calculator(name: String) {
                     passwordVisibility = passwordVisibility,
                 )
             }
+            Row(
+                modifier = Modifier
+                    .padding(top = 10.dp)
+                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        vm.viewModelScope.launch {
+                            vm.saveToDb(
+                                _payOff.value.copy(
+                                    id = 100L,
+                                    timeStamp = 10000L,
+                                    totalBalance = ourTotalProfit.toFloat(),
+                                    netBalance = 100f,
+                                    tnt = 100f,
+                                    each = 100f,
+                                    isMorning = true
+                                )
+                            )
+                            logPayOff = vm.getFromDb()
+                            vm.viewModelScope.launch {
+                                logPayOff.collect{
+                                        it ->
+                                    it.forEach { save ->
+                                        id.value = save.totalBalance.toString()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text(text = "Save to DB")
+                }
+                    Log.d("Log from db", "${_payOff}")
+            }
+            Row(
+                modifier = Modifier
+                    .padding(top = 10.dp)
+                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = id.value)
+            }
         }
     }
 }
@@ -346,7 +415,7 @@ fun CommonTextField(text: String, onValueChange: (String) -> Unit, passwordVisib
         },
         visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
 
-    )
+        )
 }
 
 @Composable
