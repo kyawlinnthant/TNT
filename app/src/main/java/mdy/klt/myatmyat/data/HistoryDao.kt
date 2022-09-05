@@ -10,8 +10,14 @@ interface HistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPayOff(payOff: PayOff)
 
-    @Delete(entity = PayOff::class)
-    suspend fun deleteHistory(payOff: PayOff)
+//    @Delete(entity = PayOff::class)
+//    suspend fun deleteAllHistory(payOff: PayOff)
+
+    @Query("DELETE FROM ${Constants.TABLE_NAME}")
+    suspend fun deleteAllHistory()
+
+    @Query("DELETE FROM ${Constants.TABLE_NAME} WHERE id = :id ")
+    suspend fun deleteItemHistory(id: Long)
 
     @Query("SELECT * FROM ${Constants.TABLE_NAME} ORDER BY timeStamp DESC")
     fun getAllHistory() : Flow<List<PayOff>>

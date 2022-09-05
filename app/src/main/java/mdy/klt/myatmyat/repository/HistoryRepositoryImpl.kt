@@ -13,8 +13,12 @@ class HistoryRepositoryImpl @Inject constructor(
         dao.insertPayOff(payOff = payOff)
     }
 
-    override suspend fun deleteItem(payOff: PayOff) {
-        dao.deleteHistory(payOff = payOff)
+    override suspend fun deleteAllItem() {
+        dao.deleteAllHistory()
+    }
+
+    override suspend fun deleteItem(id: Long) {
+        dao.deleteItemHistory(id = id)
     }
 
     override suspend fun getItems(): Flow<List<PayOff>> {

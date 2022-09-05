@@ -1,10 +1,12 @@
 package mdy.klt.myatmyat.ui
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -20,82 +22,51 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.launch
 import mdy.klt.myatmyat.R
 import mdy.klt.myatmyat.data.PayOff
+import mdy.klt.myatmyat.ui.udf.CalculatorAction
+import timber.log.Timber
 import kotlin.math.roundToInt
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun Calculator(name: String) {
-    var total by remember { mutableStateOf("10") }
+
     val vm: MyViewModel = hiltViewModel()
-    var logPayOff: Flow<List<PayOff>> = emptyFlow()
-    var id: MutableState<String> = remember {mutableStateOf("")}
-    var _payOff: MutableState<PayOff> = remember {
-        mutableStateOf(
-            PayOff(
-                id = 100L,
-                timeStamp = 100L,
-                totalBalance = 100f,
-                netBalance = 100f,
-                tnt = 100f,
-                each = 100f,
-                isMorning = false
-            )
-        )
-    }
+    val history = vm.result
 
-//    val payOff: MutableState<PayOff> get()
-    var percentOfTotal by rememberSaveable {
-        mutableStateOf("0")
-    }
+    var total = vm._total.value
+    var percentOfTotal = vm._percentOfTotal.value
+    var commissionFee = vm._commissionFee.value
+    var totalLeft = vm._totalLeft.value
+    var winNumberAmount = vm._winNumberAmount.value
+    var totalReturnAmount = vm._totalReturnAmount.value
+    var mustReturnAmount = vm._mustReturnAmount.value
+    var ourTotalProfit = vm._ourTotalProfit.value
+    var profitForShareOwner = vm._profitForShareOwner.value
+    var profitForManager = vm._profitForManager.value
 
-    var commissionFee by rememberSaveable {
-        mutableStateOf("0")
-    }
 
-    var totalLeft by rememberSaveable {
-        mutableStateOf("0")
-    }
 
-    var winNumberAmount by rememberSaveable {
-        mutableStateOf("0")
-    }
+    val payOff = PayOff(
+        timeStamp = 100L,
+        totalBalance = 100f,
+        netBalance = 100f,
+        tnt = 100f,
+        each = 100f,
+        isMorning = false,
+        currentTime = ""
+    )
 
-    var totalReturnAmount by rememberSaveable {
-        mutableStateOf("0")
-    }
 
-    var mustReturnAmount by rememberSaveable {
-        mutableStateOf("0")
-    }
-
-    var ourTotalProfit by rememberSaveable {
-        mutableStateOf("0")
-    }
-
-    var profitForShareOwner by rememberSaveable {
-        mutableStateOf("0")
-    }
-
-    var profitForManager by rememberSaveable {
-        mutableStateOf("0")
-    }
 
     var passwordVisibility by rememberSaveable {
-        mutableStateOf(true)
-    }
-
-    var focusState by rememberSaveable {
         mutableStateOf(true)
     }
 
@@ -106,45 +77,6 @@ fun Calculator(name: String) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
 
-    percentOfTotal = if (total.isEmpty()) {
-        0
-    } else {
-        (total.toInt() * 0.2).roundToInt()
-    }.toString()
-
-    totalReturnAmount = if (winNumberAmount.isEmpty()) {
-        "0"
-    } else {
-        (winNumberAmount.toInt() * 80).toString()
-    }
-
-    mustReturnAmount = if (totalReturnAmount.isEmpty()) {
-        "0"
-    } else {
-        (totalReturnAmount.toInt() * 0.2).roundToInt().toString()
-    }
-
-    if (totalLeft.isEmpty()) {
-        "0"
-    } else if (totalLeft.toInt() < 0) {
-        "0"
-    } else {
-        (totalLeft.toInt() - mustReturnAmount.toFloat()).roundToInt().toString()
-    }
-    profitForShareOwner = if (ourTotalProfit.isEmpty()) {
-        "0"
-    } else {
-        (ourTotalProfit.toInt() * 0.184).roundToInt().toString()
-    }
-
-    profitForManager = if (ourTotalProfit.isEmpty()) {
-        "0"
-    } else {
-        (ourTotalProfit.toInt() * 0.08).roundToInt().toString()
-    }
-
-    commissionFee = ((percentOfTotal.toInt() * 0.17).roundToInt()).toString()
-    totalLeft = (percentOfTotal.toInt() - commissionFee.toInt()).toString()
 
     Scaffold(modifier = Modifier, topBar = {
         SmallTopAppBar(
@@ -192,7 +124,13 @@ fun Calculator(name: String) {
                 CommonTextField(
                     text = total,
                     onValueChange = { value ->
-                        total = value
+                        vm._total.value = value
+                        vm.percentOfTotal()
+                        vm.commissionFee()
+                        vm.totalLeft()
+                        vm.ourTotalProfit()
+                        vm.profitForShareOwner()
+                        vm.profitForManager()
                     },
                     passwordVisibility = passwordVisibility,
                 )
@@ -202,16 +140,11 @@ fun Calculator(name: String) {
                     .padding(top = 10.dp)
                     .weight(1f), verticalAlignment = Alignment.CenterVertically
             ) {
-                CommonText(text = "10% of Total")
+                CommonText(text = "20% of Total")
                 CommonTextField(
                     text = percentOfTotal,
                     onValueChange = { value ->
-                        percentOfTotal = value
-                        total = if (percentOfTotal != "") {
-                            (percentOfTotal.toInt() * 10).toString()
-                        } else {
-                            ""
-                        }
+//                        percentOfTotal = value
                     },
                     passwordVisibility = passwordVisibility,
                 )
@@ -225,7 +158,7 @@ fun Calculator(name: String) {
                 CommonTextField(
                     text = commissionFee,
                     onValueChange = { value ->
-                        commissionFee = value
+                        vm._commissionFee.value = value
                     },
                     passwordVisibility = passwordVisibility,
                 )
@@ -253,7 +186,12 @@ fun Calculator(name: String) {
                 CommonTextField(
                     text = winNumberAmount,
                     onValueChange = { value ->
-                        winNumberAmount = value
+                        vm._winNumberAmount.value = value
+                        vm.totalReturnAmount()
+                        vm.mustReturnAmount()
+                        vm.ourTotalProfit()
+                        vm.profitForShareOwner()
+                        vm.profitForManager()
                     },
                     passwordVisibility = passwordVisibility,
                 )
@@ -268,11 +206,11 @@ fun Calculator(name: String) {
                     text = totalReturnAmount,
                     onValueChange = { value ->
                         totalReturnAmount = value
-                        winNumberAmount = if (totalReturnAmount != "") {
-                            (totalReturnAmount.toInt() / 80.0).roundToInt().toString()
-                        } else {
-                            ""
-                        }
+//                        winNumberAmount = if (totalReturnAmount != "") {
+//                            (totalReturnAmount.toInt() / 80.0).roundToInt().toString()
+//                        } else {
+//                            ""
+//                        }
 
                     },
                     passwordVisibility = passwordVisibility,
@@ -283,7 +221,7 @@ fun Calculator(name: String) {
                     .padding(top = 10.dp)
                     .weight(1f), verticalAlignment = Alignment.CenterVertically
             ) {
-                CommonText(text = "Our return amount?(10%)")
+                CommonText(text = "Our return amount?(20%)")
                 CommonTextField(
                     text = mustReturnAmount,
                     onValueChange = { value ->
@@ -320,7 +258,7 @@ fun Calculator(name: String) {
                 CommonTextField(
                     text = profitForShareOwner,
                     onValueChange = { value ->
-                        profitForShareOwner = value
+                        vm._profitForShareOwner.value = value
                     },
                     passwordVisibility = passwordVisibility,
                 )
@@ -334,7 +272,7 @@ fun Calculator(name: String) {
                 CommonTextField(
                     text = profitForManager,
                     onValueChange = { value ->
-                        profitForManager = value
+                        vm._profitForManager.value = value
                     },
                     passwordVisibility = passwordVisibility,
                 )
@@ -346,43 +284,49 @@ fun Calculator(name: String) {
             ) {
                 OutlinedButton(
                     onClick = {
-                        vm.viewModelScope.launch {
-                            vm.saveToDb(
-                                _payOff.value.copy(
-                                    id = 100L,
-                                    timeStamp = 10000L,
-                                    totalBalance = ourTotalProfit.toFloat(),
-                                    netBalance = 100f,
-                                    tnt = 100f,
-                                    each = 100f,
-                                    isMorning = true
-                                )
+                        vm.onActionCalculator(
+                            action = CalculatorAction.SaveDataToDb(
+                                data = payOff.copy(totalBalance = ourTotalProfit.toFloat(), currentTime = vm.getCurrentDateTime().toString())
                             )
-                            logPayOff = vm.getFromDb()
-                            vm.viewModelScope.launch {
-                                logPayOff.collect{
-                                        it ->
-                                    it.forEach { save ->
-                                        id.value = save.totalBalance.toString()
-                                    }
-                                }
-                            }
-                        }
+                        )
+                        Timber.tag("Click Event").d("Save")
                     }
                 ) {
                     Text(text = "Save to DB")
                 }
-                    Log.d("Log from db", "${_payOff}")
+                OutlinedButton(
+                    onClick = {
+                        vm.onActionCalculator(action = CalculatorAction.DeleteDbItem(itemId = 1L))
+                    }
+                ) {
+                    Text(text = "Delete item from DB")
+                }
+                OutlinedButton(
+                    onClick = {
+                        vm.onActionCalculator(action = CalculatorAction.DeleteAllItem)
+                    }
+                ) {
+                    Text(text = "All")
+                }
+//                    Log.d("Log from db", "${_payOff}")
             }
-            Row(
+
+            LazyColumn(
                 modifier = Modifier
                     .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+                    .weight(1f), horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = id.value)
+                items(history) { result ->
+                    Text(text = result.toString())
+                }
             }
         }
     }
+}
+
+@Composable
+fun ShowText(text: String) {
+    Text(text = text)
 }
 
 private fun percentCalculator(percent: Int) {
@@ -414,8 +358,7 @@ fun CommonTextField(text: String, onValueChange: (String) -> Unit, passwordVisib
             }
         },
         visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-
-        )
+    )
 }
 
 @Composable
