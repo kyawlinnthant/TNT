@@ -4,9 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -22,23 +19,24 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.flow.Flow
+import androidx.navigation.NavController
+import kotlinx.coroutines.flow.collectLatest
 import mdy.klt.myatmyat.R
 import mdy.klt.myatmyat.data.PayOff
+import mdy.klt.myatmyat.navigation.destination.Destinations
+import mdy.klt.myatmyat.theme.dimen
 import mdy.klt.myatmyat.ui.udf.CalculatorAction
-import timber.log.Timber
+import mdy.klt.myatmyat.ui.udf.CalculatorEvent
 import kotlin.math.roundToInt
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
-fun Calculator(name: String) {
+fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavController) {
 
-    val vm: MyViewModel = hiltViewModel()
     val history = vm.result
 
     var total = vm._total.value
@@ -53,7 +51,6 @@ fun Calculator(name: String) {
     var profitForManager = vm._profitForManager.value
 
 
-
     val payOff = PayOff(
         timeStamp = 100L,
         totalBalance = 100f,
@@ -63,7 +60,6 @@ fun Calculator(name: String) {
         isMorning = false,
         currentTime = ""
     )
-
 
 
     var passwordVisibility by rememberSaveable {
@@ -76,13 +72,58 @@ fun Calculator(name: String) {
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    LaunchedEffect(key1 = true) {
+        vm.calculatorEvent.collectLatest {
+            when (it) {
+                CalculatorEvent.NavigateToHistoryList -> {
+                    navController.navigate(Destinations.HistoryList.route)
+                }
+            }
+        }
+    }
+
 
 
     Scaffold(modifier = Modifier, topBar = {
-        SmallTopAppBar(
+        TopAppBar(
             modifier = Modifier,
-            title = { Text(text = "Calculator") },
-            colors = TopAppBarDefaults.smallTopAppBarColors(MaterialTheme.colorScheme.primary)
+            title = {
+                Text(
+                    text = "Calculator",
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            },
+            colors = TopAppBarDefaults.smallTopAppBarColors(MaterialTheme.colorScheme.primary),
+            actions = {
+                IconButton(
+                    modifier = Modifier
+                        .padding(MaterialTheme.dimen.small)
+                        .background(MaterialTheme.colorScheme.primary),
+                    onClick = {
+                        vm.onActionCalculator(
+                            action = CalculatorAction.SaveDataToDb(
+                                data = payOff.copy(
+                                    totalBalance = ourTotalProfit.toFloat(),
+                                    currentTime = vm.historyDateTime()
+                                )
+                            )
+                        )
+                        vm.onActionCalculator(
+                            action = CalculatorAction.NavigateToHistoryList
+                        )
+
+                    }
+
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_save_24),
+                        contentDescription = "save to db",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+
         )
     }) {
         Column(
@@ -284,18 +325,6 @@ fun Calculator(name: String) {
             ) {
                 OutlinedButton(
                     onClick = {
-                        vm.onActionCalculator(
-                            action = CalculatorAction.SaveDataToDb(
-                                data = payOff.copy(totalBalance = ourTotalProfit.toFloat(), currentTime = vm.getCurrentDateTime().toString())
-                            )
-                        )
-                        Timber.tag("Click Event").d("Save")
-                    }
-                ) {
-                    Text(text = "Save to DB")
-                }
-                OutlinedButton(
-                    onClick = {
                         vm.onActionCalculator(action = CalculatorAction.DeleteDbItem(itemId = 1L))
                     }
                 ) {
@@ -310,16 +339,16 @@ fun Calculator(name: String) {
                 }
 //                    Log.d("Log from db", "${_payOff}")
             }
-
-            LazyColumn(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                items(history) { result ->
-                    Text(text = result.toString())
-                }
-            }
+//
+//            LazyColumn(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), horizontalAlignment = Alignment.CenterHorizontally
+//            ) {
+//                items(history) { result ->
+//                    Text(text = result.toString())
+//                }
+//            }
         }
     }
 }

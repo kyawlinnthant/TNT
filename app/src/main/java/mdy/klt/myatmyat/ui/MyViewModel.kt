@@ -1,15 +1,19 @@
 package mdy.klt.myatmyat.ui
 
+import android.text.format.DateFormat
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import mdy.klt.myatmyat.data.PayOff
+import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.repository.HistoryRepository
-import mdy.klt.myatmyat.ui.udf.CalculatorAction
+import mdy.klt.myatmyat.ui.udf.*
+import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
 import kotlin.math.roundToInt
@@ -47,6 +51,15 @@ class MyViewModel @Inject constructor(
 
     val _profitForManager = mutableStateOf("0")
     private val profitForManager: MutableState<String> get() = _profitForManager
+
+    private val _calculatorEvent = MutableSharedFlow<CalculatorEvent>()
+    val calculatorEvent: SharedFlow<CalculatorEvent> get() = _calculatorEvent
+
+    private val _historyListEvent = MutableSharedFlow<HistoryListEvent>()
+    val historyListEvent: SharedFlow<HistoryListEvent> get() = _historyListEvent
+
+    private val _historyListState = mutableStateOf(HistoryListState())
+    val historyListState: State<HistoryListState> get() = _historyListState
 
 
 
@@ -156,8 +169,24 @@ class MyViewModel @Inject constructor(
             repo.getItems().collectLatest {
                 _result.clear()
                 _result.addAll(it)
+                _result.sortByDescending { it.currentTime }
             }
         }
+    }
+
+     fun historyDateTime(): String {
+        val dateFormat = "yyyy MMM dd 'at' hh:mm aa"
+        val date = getDate(Calendar.getInstance().timeInMillis)
+        val skeleton = DateFormat.getBestDateTimePattern(Locale.getDefault(), dateFormat)
+        val formatter = SimpleDateFormat(skeleton, Locale.getDefault()).apply {
+            timeZone = TimeZone.getDefault()
+            applyLocalizedPattern(skeleton)
+        }
+        return formatter.format(date.time)
+    }
+
+    private fun getDate(timeMilli: Long): Date {
+        return Date(timeMilli)
     }
 
     fun onActionCalculator(action: CalculatorAction) {
@@ -170,6 +199,48 @@ class MyViewModel @Inject constructor(
             }
             CalculatorAction.DeleteAllItem -> {
                 deleteAllItemFromDb()
+            }
+            CalculatorAction.NavigateToHistoryList -> {
+                viewModelScope.launch {
+                    _calculatorEvent.emit(CalculatorEvent.NavigateToHistoryList)
+                }
+            }
+        }
+    }
+
+    fun onActionHistoryList(action: HistoryListAction) {
+        when(action) {
+            is HistoryListAction.DeleteHistoryItem -> {
+                viewModelScope.launch {
+                    _historyListState.value = historyListState.value.copy(
+                        shouldShowDialog = false
+                    )
+                }
+                deleteItemFromDb(action.id)
+            }
+            HistoryListAction.NavigateToCalculator -> {
+                viewModelScope.launch {
+                    _historyListEvent.emit(HistoryListEvent.NavigateToCalculator)
+                }
+            }
+            is HistoryListAction.showDeleteConfirmDialog -> {
+                viewModelScope.launch {
+//                  _historyListState.value.copy(
+//                      shouldShowDialog = true,
+//                      deleteItem = action.id
+//                  )
+                    _historyListState.value = historyListState.value.copy(
+                        shouldShowDialog = true,
+                        deleteItem = action.id
+                    )
+                }
+            }
+            HistoryListAction.DismissDeleteConfirmDialog -> {
+                viewModelScope.launch {
+                    _historyListState.value = historyListState.value.copy(
+                        shouldShowDialog = false
+                    )
+                }
             }
         }
     }
