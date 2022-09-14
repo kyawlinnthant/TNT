@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import mdy.klt.myatmyat.data.PayOff
-import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.repository.HistoryRepository
 import mdy.klt.myatmyat.ui.udf.*
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
@@ -223,7 +223,7 @@ class MyViewModel @Inject constructor(
                     _historyListEvent.emit(HistoryListEvent.NavigateToCalculator)
                 }
             }
-            is HistoryListAction.showDeleteConfirmDialog -> {
+            is HistoryListAction.ShowDeleteConfirmDialog -> {
                 viewModelScope.launch {
 //                  _historyListState.value.copy(
 //                      shouldShowDialog = true,
@@ -240,6 +240,12 @@ class MyViewModel @Inject constructor(
                     _historyListState.value = historyListState.value.copy(
                         shouldShowDialog = false
                     )
+                }
+            }
+            is HistoryListAction.ShowHistoryDetail -> {
+                Timber.tag("tzo.history.detail").d("trigger")
+                viewModelScope.launch {
+                    _historyListEvent.emit(HistoryListEvent.NavigateToHistoryDetail(id = action.id))
                 }
             }
         }

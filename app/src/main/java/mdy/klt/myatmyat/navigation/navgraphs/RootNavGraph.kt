@@ -5,14 +5,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import mdy.klt.myatmyat.navigation.destination.ArgConstants
 import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.navigation.destination.Routes
-import mdy.klt.myatmyat.ui.BrandingScreen
-import mdy.klt.myatmyat.ui.DailyCalculatorScreen
-import mdy.klt.myatmyat.ui.HistoryListScreen
-import mdy.klt.myatmyat.ui.MyViewModel
+import mdy.klt.myatmyat.ui.*
 
 @SuppressLint("UnrememberedGetBackStackEntry")
 @Composable
@@ -41,11 +41,19 @@ fun RootNavGraph(
             val appViewModel = hiltViewModel<MyViewModel>(parentEntry)
             HistoryListScreen(navController = navController, vm = appViewModel)
         }
-        composable(route = Destinations.HistoryDetail.route) {
+        composable(route = Destinations.HistoryDetail.route,
+            arguments = listOf(
+            navArgument(name = ArgConstants.ID) {
+                type = NavType.LongType
+            }
+        )) {
             val parentEntry = remember {
                 navController.getBackStackEntry(Routes.APP_ROUTE)
             }
             val appViewModel = hiltViewModel<MyViewModel>(parentEntry)
+            HistoryDetailScreen(navController = navController, vm = appViewModel, id = it.arguments?.getLong(ArgConstants.ID)?:0L)
         }
+
+
     }
 }

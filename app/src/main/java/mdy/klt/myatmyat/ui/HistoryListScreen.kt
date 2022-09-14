@@ -1,34 +1,31 @@
 package mdy.klt.myatmyat.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.flow.collectLatest
 import mdy.klt.myatmyat.R
 import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.theme.dimen
-import mdy.klt.myatmyat.ui.udf.CalculatorEvent
 import mdy.klt.myatmyat.ui.udf.HistoryListAction
 import mdy.klt.myatmyat.ui.udf.HistoryListEvent
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,11 +39,14 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                 HistoryListEvent.NavigateToCalculator -> {
                     navController.navigate(Destinations.DailyCalculator.route)
                 }
+                is HistoryListEvent.NavigateToHistoryDetail -> {
+                    navController.navigate(Destinations.HistoryDetail.passId(dataId = it.id))
+                }
             }
         }
     }
 
-    if(vm.historyListState.value.shouldShowDialog) {
+    if (vm.historyListState.value.shouldShowDialog) {
         CommonDialog(
             modifier = Modifier.fillMaxWidth(),
             title = stringResource(id = R.string.delete_confirm_title),
@@ -72,7 +72,8 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text( text = "2D Data List",
+                    Text(
+                        text = "2D Data List",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onPrimary
@@ -96,7 +97,8 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
         },
         content = {
             LazyColumn(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
                     .padding(it)
                     .background(
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
@@ -114,6 +116,15 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                             .fillMaxWidth()
                             .padding(bottom = MaterialTheme.dimen.base)
                             .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base_2x))
+                            .clickable(onClick = {
+                                Timber
+                                    .tag("tzo.detail.trigger")
+                                    .d("ok")
+                                vm.onActionHistoryList(
+                                    action = HistoryListAction.ShowHistoryDetail(id = result.id!!)
+                                )
+                             //   HistoryListAction.ShowHistoryDetail(id = result.id!!)
+                            })
                             .background(MaterialTheme.colorScheme.surface)
                             .padding(
                                 horizontal = MaterialTheme.dimen.base_2x,
@@ -161,7 +172,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                     modifier = Modifier,
                                     onClick = {
                                         vm.onActionHistoryList(
-                                            action = HistoryListAction.showDeleteConfirmDialog(id = result.id!!)
+                                            action = HistoryListAction.ShowDeleteConfirmDialog(id = result.id!!)
                                         )
                                     }
                                 ) {
