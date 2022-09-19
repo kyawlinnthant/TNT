@@ -41,7 +41,7 @@ fun BrandingScreen(navController: NavController) {
         logoAnimation = true
         delay(100)
         navController.popBackStack()
-        navController.navigate(Destinations.HistoryList.route)
+        navController.navigate(Destinations.DailyCalculator.route)
     }
     BrandingView(alpha = alphaAnimation.value)
 }

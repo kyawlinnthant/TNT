@@ -25,9 +25,7 @@ class MainActivity : ComponentActivity() {
             MyatMyatTheme {
                 Surface {
                     val navController = rememberNavController()
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        RootNavGraph(navController = navController)
-                    }
+                    MainScreen(navController = navController)
                 }
                 // A surface container using the 'background' color from the theme
             }

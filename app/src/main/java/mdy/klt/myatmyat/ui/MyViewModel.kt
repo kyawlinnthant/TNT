@@ -25,6 +25,9 @@ class MyViewModel @Inject constructor(
     private val _result = mutableStateListOf<PayOff>()
     val result: List<PayOff> get() = _result
 
+    val _winNumber = mutableStateOf("")
+    private val winNumber: MutableState<String> get() = _winNumber
+
     val _percentOfTotal = mutableStateOf("0")
     private val percentOfTotal: MutableState<String> get() = _percentOfTotal
 
@@ -34,7 +37,7 @@ class MyViewModel @Inject constructor(
     val _totalLeft = mutableStateOf("0")
     private val totalLeft: MutableState<String> get() = _totalLeft
 
-    val _winNumberAmount = mutableStateOf("0")
+    val _winNumberAmount = mutableStateOf("")
     private val winNumberAmount: MutableState<String> get() = _winNumberAmount
 
     val _totalReturnAmount = mutableStateOf("0")
@@ -52,6 +55,9 @@ class MyViewModel @Inject constructor(
     val _profitForManager = mutableStateOf("0")
     private val profitForManager: MutableState<String> get() = _profitForManager
 
+    val _isMorning = mutableStateOf(true)
+    private val isMorning: MutableState<Boolean> get() = _isMorning
+
     private val _calculatorEvent = MutableSharedFlow<CalculatorEvent>()
     val calculatorEvent: SharedFlow<CalculatorEvent> get() = _calculatorEvent
 
@@ -61,11 +67,16 @@ class MyViewModel @Inject constructor(
     private val _historyListState = mutableStateOf(HistoryListState())
     val historyListState: State<HistoryListState> get() = _historyListState
 
+    val _shouldShowCurrent = mutableStateOf(false)
+    private val shouldShowCurrent: MutableState<Boolean> get() = _shouldShowCurrent
+
+
+
 
 
     var realResult : MutableList<PayOff> = mutableStateListOf()
 
-    val _total = mutableStateOf("0")
+    val _total = mutableStateOf("")
     val total: MutableState<String> get() = _total
 
     init {
@@ -169,7 +180,7 @@ class MyViewModel @Inject constructor(
             repo.getItems().collectLatest {
                 _result.clear()
                 _result.addAll(it)
-                _result.sortByDescending { it.currentTime }
+                _result.sortByDescending { it.timeStamp }
             }
         }
     }
@@ -185,6 +196,17 @@ class MyViewModel @Inject constructor(
         return formatter.format(date.time)
     }
 
+    fun detailDateTime(milli: Long): String {
+        val dateFormat = "yyyy MMM dd"
+        val date = getDate(milli)
+        val skeleton = DateFormat.getBestDateTimePattern(Locale.getDefault(), dateFormat)
+        val formatter = SimpleDateFormat(skeleton, Locale.getDefault()).apply {
+            timeZone = TimeZone.getDefault()
+            applyLocalizedPattern(skeleton)
+        }
+        return formatter.format(date.time)
+    }
+
     private fun getDate(timeMilli: Long): Date {
         return Date(timeMilli)
     }
@@ -192,6 +214,7 @@ class MyViewModel @Inject constructor(
     fun onActionCalculator(action: CalculatorAction) {
         when (action) {
             is CalculatorAction.SaveDataToDb -> {
+                _shouldShowCurrent.value = true
                 saveToDb(action.data)
             }
             is CalculatorAction.DeleteDbItem -> {
@@ -203,6 +226,11 @@ class MyViewModel @Inject constructor(
             CalculatorAction.NavigateToHistoryList -> {
                 viewModelScope.launch {
                     _calculatorEvent.emit(CalculatorEvent.NavigateToHistoryList)
+                }
+            }
+            is CalculatorAction.switchClick -> {
+                viewModelScope.launch {
+                    _isMorning.value = action.isMorning
                 }
             }
         }
@@ -246,6 +274,11 @@ class MyViewModel @Inject constructor(
                 Timber.tag("tzo.history.detail").d("trigger")
                 viewModelScope.launch {
                     _historyListEvent.emit(HistoryListEvent.NavigateToHistoryDetail(id = action.id))
+                }
+            }
+            HistoryListAction.DatePickerDialog -> {
+                viewModelScope.launch {
+                    _historyListEvent.emit(HistoryListEvent.ShowDateTimeDialog)
                 }
             }
         }

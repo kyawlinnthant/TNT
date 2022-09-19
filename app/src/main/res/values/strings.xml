@@ -4,4 +4,6 @@
     <string name="delete_confirm">Are you sure to delete?</string>
     <string name="cancel_button">Cancel</string>
     <string name="confirm_button">Confirm</string>
+    <string name="nav_calculator">Calculator</string>
+    <string name="nav_history_list">History List</string>
 </resources>

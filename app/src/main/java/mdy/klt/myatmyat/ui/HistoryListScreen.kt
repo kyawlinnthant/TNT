@@ -1,5 +1,9 @@
 package mdy.klt.myatmyat.ui
 
+import android.annotation.SuppressLint
+import android.app.DatePickerDialog
+import android.widget.DatePicker
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,29 +13,54 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.flow.collectLatest
 import mdy.klt.myatmyat.R
 import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.theme.dimen
+import mdy.klt.myatmyat.ui.domain.DaysOfWeek
 import mdy.klt.myatmyat.ui.udf.HistoryListAction
 import mdy.klt.myatmyat.ui.udf.HistoryListEvent
 import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
 
     val shouldShowDialog = vm.historyListState.value.shouldShowDialog
+    var visible by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+
+    /** date picker */
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
+
+//            vm.onActionEdit(
+//                ProfileEditAction.ChangeDob(
+//                    dob = "$year-${month + 1}-$dayOfMonth"
+//                )
+//            )
+        },
+        Calendar.getInstance().get(Calendar.YEAR),
+        Calendar.getInstance().get(Calendar.MONTH),
+        Calendar.getInstance().get(Calendar.DAY_OF_MONTH),
+    )
 
     LaunchedEffect(key1 = true) {
         vm.historyListEvent.collectLatest {
@@ -42,9 +71,66 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                 is HistoryListEvent.NavigateToHistoryDetail -> {
                     navController.navigate(Destinations.HistoryDetail.passId(dataId = it.id))
                 }
+                HistoryListEvent.ShowDateTimeDialog -> {
+                    datePickerDialog.show()
+                }
             }
         }
     }
+
+    @SuppressLint("SimpleDateFormat")
+    fun getCalculatedMonths( month: Int): String? {
+        val c: Calendar = GregorianCalendar()
+        c.add(Calendar.MONTH, -month)
+        val fullDate = SimpleDateFormat("yyyy-MM-dd-E")
+        val day = SimpleDateFormat("E")
+        Timber.tag("get month").d("${fullDate.format(c.time)}")
+        Timber.tag("get month").d("${day.format(c.time)}")
+        return fullDate.format(c.time).toString()
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    fun getCalculatedDays( day: Int): String? {
+        val c: Calendar = GregorianCalendar()
+        c.add(Calendar.DAY_OF_MONTH, -day)
+        val fullDay = SimpleDateFormat("yyyy-MM-dd-E")
+        val dayFormat = SimpleDateFormat("E")
+        val dayName = dayFormat.format(c.time).toString()
+        when(dayName) {
+            DaysOfWeek.MONDAY.dayName -> {
+                Timber.tag("Today is Monday").d("${dayFormat.format(c.time)}")
+            }
+            DaysOfWeek.TUESDAY.dayName -> {
+                Timber.tag("Today is Tuesday").d("${dayFormat.format(c.time)}")
+            }
+            DaysOfWeek.WEDNESDAY.dayName -> {
+                Timber.tag("Today is Wednesday").d("${dayFormat.format(c.time)}")
+            }
+            DaysOfWeek.THURSDAY.dayName -> {
+                Timber.tag("Today is Thursday").d("${dayFormat.format(c.time)}")
+            }
+            DaysOfWeek.FRIDAY.dayName -> {
+                Timber.tag("Today is Friday").d("${dayFormat.format(c.time)}")
+            }
+            DaysOfWeek.SATURDAY.dayName -> {
+                Timber.tag("Today is Saturday").d("${dayFormat.format(c.time)}")
+            }
+            DaysOfWeek.SUNDAY.dayName -> {
+                Timber.tag("Today is Sunday").d("${dayFormat.format(c.time)}")
+            }
+            "Fri" -> {
+                Timber.tag("Today is Sunday").d("${dayFormat.format(c.time)}")
+            }
+        }
+        Timber.tag("get day").d("${fullDay.format(c.time)}")
+        Timber.tag("get day").d("${dayFormat.format(c.time)}")
+        Timber.tag("get day2").d("$dayName && ${DaysOfWeek.FRIDAY.dayName}")
+
+        return fullDay.format(c.time).toString()
+    }
+
+
+
 
     if (vm.historyListState.value.shouldShowDialog) {
         CommonDialog(
@@ -60,6 +146,9 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
             confirmButtonLabel = stringResource(id = R.string.confirm_button),
             confirmButtonType = ButtonType.TONAL_BUTTON,
             confirmButtonAction = {
+                if (vm.historyListState.value.deleteItem == vm.result.first().id) {
+                    vm._shouldShowCurrent.value = false
+                }
                 vm.onActionHistoryList(
                     action = HistoryListAction.DeleteHistoryItem(vm.historyListState.value.deleteItem)
                 )
@@ -88,6 +177,17 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                         Icon(
                             imageVector = Icons.Filled.Add,
                             contentDescription = "Add New Data",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                    IconButton(onClick = {
+                        vm.onActionHistoryList(
+                            action = HistoryListAction.DatePickerDialog
+                        )
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.DateRange,
+                            contentDescription = "Select Time",
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
@@ -120,10 +220,12 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                 Timber
                                     .tag("tzo.detail.trigger")
                                     .d("ok")
+                                getCalculatedDays(3)
+                                getCalculatedMonths(5)
                                 vm.onActionHistoryList(
                                     action = HistoryListAction.ShowHistoryDetail(id = result.id!!)
                                 )
-                             //   HistoryListAction.ShowHistoryDetail(id = result.id!!)
+                                //   HistoryListAction.ShowHistoryDetail(id = result.id!!)
                             })
                             .background(MaterialTheme.colorScheme.surface)
                             .padding(
@@ -151,7 +253,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = "24",
+                                        text = result.winNumber.toString(),
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -162,11 +264,22 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                         style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    Text(
-                                        text = "MORNING",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
+                                    if (result.isMorning) {
+                                        Text(
+                                            text = "MORNING",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.outline
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "EVENING",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.outline
+                                        )
+                                    }
+                                }
+                                if (index == 0 && vm._shouldShowCurrent.value) {
+                                    InfiniteAnimation()
                                 }
                                 IconButton(
                                     modifier = Modifier,
@@ -204,7 +317,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                         color = MaterialTheme.colorScheme.outline
                                     )
                                     Text(
-                                        text = result.totalBalance.toString(),
+                                        text = result.total.toString(),
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -224,11 +337,19 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.outline
                                     )
-                                    Text(
-                                        text = result.totalBalance.toString(),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
+                                    if (result.totalProfit > 0) {
+                                        Text(
+                                            text = result.totalProfit.toString(),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        Text(
+                                            text = result.totalProfit.toString(),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -242,4 +363,29 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
 @Composable
 fun VerticalSpacerBase() {
     Spacer(modifier = Modifier.height(MaterialTheme.dimen.base))
+}
+
+@Composable
+fun VerticalSpacerBase2x() {
+    Spacer(modifier = Modifier.height(MaterialTheme.dimen.base_2x))
+}
+
+@Composable
+fun InfiniteAnimation() {
+    val infiniteTransition = rememberInfiniteTransition()
+
+    val heartSize by infiniteTransition.animateFloat(
+        initialValue = 12.0f,
+        targetValue = 15.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, delayMillis = 100, easing = FastOutLinearInEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    Text(
+        text = "Current",
+        color = MaterialTheme.colorScheme.primary,
+        fontSize = heartSize.sp,
+        fontWeight = FontWeight.Bold
+    )
 }

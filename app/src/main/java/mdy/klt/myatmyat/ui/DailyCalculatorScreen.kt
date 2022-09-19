@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,12 +12,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,14 +28,16 @@ import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.theme.dimen
 import mdy.klt.myatmyat.ui.udf.CalculatorAction
 import mdy.klt.myatmyat.ui.udf.CalculatorEvent
-import kotlin.math.roundToInt
+import timber.log.Timber
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavController) {
 
+
     val history = vm.result
+    var winNumber = vm._winNumber.value
 
     var total = vm._total.value
     var percentOfTotal = vm._percentOfTotal.value
@@ -49,26 +49,42 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
     var ourTotalProfit = vm._ourTotalProfit.value
     var profitForShareOwner = vm._profitForShareOwner.value
     var profitForManager = vm._profitForManager.value
+    var isMorning = vm._isMorning.value
+
+
+    val radioOptions = listOf("Morning", "Evening")
+    val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
 
 
     val payOff = PayOff(
+        winNumber = 100,
         timeStamp = 100L,
-        totalBalance = 100f,
-        netBalance = 100f,
-        tnt = 100f,
-        each = 100f,
-        isMorning = false,
-        currentTime = ""
+        total = 100L,
+        currentTime = "",
+        percentOfTotal = 100L,
+        commissionFee = 100,
+        totalLeftAsset = 100,
+        winNumberAmount = 100,
+        totalReturnAmount = 100,
+        ourReturnAmount = 100L,
+        shareOwnerProfit = 100,
+        totalProfit = 100L,
+        managerProfit = 100,
+        isMorning = true
     )
+
+    LaunchedEffect(key1 = true) {
+        vm._total.value = ""
+        vm._winNumberAmount.value = ""
+        vm._shouldShowCurrent.value = false
+        vm._isMorning.value = true
+    }
 
 
     var passwordVisibility by rememberSaveable {
         mutableStateOf(true)
     }
 
-    val icon = if (passwordVisibility)
-        painterResource(id = R.drawable.ic_eye_close)
-    else painterResource(id = R.drawable.ic_eye_on)
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -89,256 +105,365 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
             modifier = Modifier,
             title = {
                 Text(
-                    text = "Calculator",
+                    text = "Myat Myat",
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             },
             colors = TopAppBarDefaults.smallTopAppBarColors(MaterialTheme.colorScheme.primary),
-            actions = {
-                IconButton(
+        )
+    },
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                    )
+                    .padding(it)
+                    .padding(
+                        top = MaterialTheme.dimen.base_4x,
+                        start = MaterialTheme.dimen.base_2x,
+                        end = MaterialTheme.dimen.base_2x
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            keyboardController?.hide()
+                        }),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base)
+            ) {
+                Column(
                     modifier = Modifier
-                        .padding(MaterialTheme.dimen.small)
-                        .background(MaterialTheme.colorScheme.primary),
-                    onClick = {
-                        vm.onActionCalculator(
-                            action = CalculatorAction.SaveDataToDb(
-                                data = payOff.copy(
-                                    totalBalance = ourTotalProfit.toFloat(),
-                                    currentTime = vm.historyDateTime()
+                        .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base_2x))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(MaterialTheme.dimen.base_2x)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(MaterialTheme.dimen.base_3x),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base_2x)
+                    ) {
+                        Text(
+                            text = "Enter Win Number",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        OtpTextFieldSection(
+                            length = 2,
+                            onFilled = {
+                                Timber.tag("tzo.onfill").d("$it")
+                                vm._winNumber.value = it
+                            },
+                            isError = false,
+                        )
+                    }
+                    CommonTextField(
+                        textFieldLabel = "Total Amount",
+                        text = total,
+                        onValueChange = { value ->
+                            vm._total.value = value
+                            vm.percentOfTotal()
+                            vm.commissionFee()
+                            vm.totalLeft()
+                            vm.ourTotalProfit()
+                            vm.profitForShareOwner()
+                            vm.profitForManager()
+                        },
+                        passwordVisibility = passwordVisibility
+                    )
+                    CommonTextField(
+                        textFieldLabel = "Compensation Amount",
+                        text = winNumberAmount,
+                        onValueChange = { value ->
+                            vm._winNumberAmount.value = value
+                            vm.totalReturnAmount()
+                            vm.mustReturnAmount()
+                            vm.ourTotalProfit()
+                            vm.profitForShareOwner()
+                            vm.profitForManager()
+                        },
+                        passwordVisibility = passwordVisibility
+                    )
+                    VerticalSpacerBase()
+                    Row(
+                        modifier = Modifier,
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base_2x)
+                    ) {
+                        radioOptions.forEach { text ->
+                            Column(modifier = Modifier) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(
+                                        selected = (text == selectedOption),
+                                        onClick = {
+                                            if (text != radioOptions[0]) {
+                                                vm.onActionCalculator(
+                                                    action = CalculatorAction.switchClick(
+                                                        isMorning = false
+                                                    )
+                                                )
+                                            } else {
+                                                vm.onActionCalculator(
+                                                    action = CalculatorAction.switchClick(
+                                                        isMorning = true
+                                                    )
+                                                )
+                                            }
+                                            onOptionSelected(text)
+                                        }
+                                    )
+                                    Text(
+                                        text = text,
+                                    )
+
+                                }
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Button(modifier = Modifier, onClick = {
+                            vm.onActionCalculator(
+                                action = CalculatorAction.SaveDataToDb(
+                                    data = payOff.copy(
+                                        winNumber = winNumber.toInt(),
+                                        timeStamp = vm.getCurrentDateTime(),
+                                        total = total.toLong(),
+                                        currentTime = vm.historyDateTime(),
+                                        percentOfTotal = percentOfTotal.toLong(),
+                                        commissionFee = commissionFee.toInt(),
+                                        totalLeftAsset = totalLeft.toInt(),
+                                        winNumberAmount = winNumberAmount.toInt(),
+                                        totalReturnAmount = totalReturnAmount.toLong(),
+                                        ourReturnAmount = mustReturnAmount.toLong(),
+                                        totalProfit = ourTotalProfit.toLong(),
+                                        shareOwnerProfit = profitForShareOwner.toInt(),
+                                        managerProfit = profitForManager.toInt(),
+                                        isMorning = isMorning
+                                    )
                                 )
                             )
-                        )
-                        vm.onActionCalculator(
-                            action = CalculatorAction.NavigateToHistoryList
-                        )
-
+                            vm.onActionCalculator(
+                                action = CalculatorAction.NavigateToHistoryList
+                            )
+                        }) {
+                            Text(text = "Calculate")
+                        }
                     }
-
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_save_24),
-                        contentDescription = "save to db",
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
                 }
-            }
-
-        )
-    }) {
-        Column(
-            modifier = Modifier
-                .padding(it)
-                .padding(12.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {
-                        keyboardController?.hide()
-                    }),
-        ) {
-            Row(modifier = Modifier.weight(0.5f), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Lucky $name!",
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(0.5f)
-                )
-                IconButton(onClick = {
-                    passwordVisibility = !passwordVisibility
-                }) {
-                    Icon(
-                        painter = icon,
-                        contentDescription = "Close Text",
-                        tint = MaterialTheme.colorScheme.onSurface.copy(0.5f),
-                        modifier = Modifier
-                            .size(24.dp)
-                            .weight(1f)
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "Total Amount")
-                CommonTextField(
-                    text = total,
-                    onValueChange = { value ->
-                        vm._total.value = value
-                        vm.percentOfTotal()
-                        vm.commissionFee()
-                        vm.totalLeft()
-                        vm.ourTotalProfit()
-                        vm.profitForShareOwner()
-                        vm.profitForManager()
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "20% of Total")
-                CommonTextField(
-                    text = percentOfTotal,
-                    onValueChange = { value ->
-//                        percentOfTotal = value
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "Commission Fee (17 %)")
-                CommonTextField(
-                    text = commissionFee,
-                    onValueChange = { value ->
-                        vm._commissionFee.value = value
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "Our Total Asset(%နှုတ်ပြီးစုစုပေါင်းကျန်ငွေ)")
-                CommonTextField(
-                    text = totalLeft,
-                    onValueChange = { value ->
-                        totalLeft = value
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "Win number include?(ပေါက်ကြေးစုစုပေါင်း)")
-                CommonTextField(
-                    text = winNumberAmount,
-                    onValueChange = { value ->
-                        vm._winNumberAmount.value = value
-                        vm.totalReturnAmount()
-                        vm.mustReturnAmount()
-                        vm.ourTotalProfit()
-                        vm.profitForShareOwner()
-                        vm.profitForManager()
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "Total return amount(လျော်ကြေးစုစုပေါင်း)")
-                CommonTextField(
-                    text = totalReturnAmount,
-                    onValueChange = { value ->
-                        totalReturnAmount = value
-//                        winNumberAmount = if (totalReturnAmount != "") {
-//                            (totalReturnAmount.toInt() / 80.0).roundToInt().toString()
+//            Row(modifier = Modifier.weight(0.5f), verticalAlignment = Alignment.CenterVertically) {
+//                Text(
+//                    text = "Lucky $name!",
+//                    color = MaterialTheme.colorScheme.primary,
+//                    modifier = Modifier.weight(0.5f)
+//                )
+//                IconButton(onClick = {
+//                    passwordVisibility = !passwordVisibility
+//                }) {
+//                    Icon(
+//                        painter = icon,
+//                        contentDescription = "Close Text",
+//                        tint = MaterialTheme.colorScheme.onSurface.copy(0.5f),
+//                        modifier = Modifier
+//                            .size(24.dp)
+//                            .weight(1f)
+//                    )
+//                }
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonTextField(
+//                    text = total,
+//                    textFieldLabel = "Total Amount",
+//                    onValueChange = { value ->
+//                        vm._total.value = value
+//                        vm.percentOfTotal()
+//                        vm.commissionFee()
+//                        vm.totalLeft()
+//                        vm.ourTotalProfit()
+//                        vm.profitForShareOwner()
+//                        vm.profitForManager()
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonText(text = "20% of Total")
+//                CommonTextField(
+//                    text = percentOfTotal,
+//                    onValueChange = { value ->
+////                        percentOfTotal = value
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonText(text = "Commission Fee (17 %)")
+//                CommonTextField(
+//                    text = commissionFee,
+//                    onValueChange = { value ->
+//                        vm._commissionFee.value = value
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonText(text = "Our Total Asset(%နှုတ်ပြီးစုစုပေါင်းကျန်ငွေ)")
+//                CommonTextField(
+//                    text = totalLeft,
+//                    onValueChange = { value ->
+//                        totalLeft = value
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonText(text = "Win number include?(ပေါက်ကြေးစုစုပေါင်း)")
+//                CommonTextField(
+//                    text = winNumberAmount,
+//                    onValueChange = { value ->
+//                        vm._winNumberAmount.value = value
+//                        vm.totalReturnAmount()
+//                        vm.mustReturnAmount()
+//                        vm.ourTotalProfit()
+//                        vm.profitForShareOwner()
+//                        vm.profitForManager()
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonText(text = "Total return amount(လျော်ကြေးစုစုပေါင်း)")
+//                CommonTextField(
+//                    text = totalReturnAmount,
+//                    onValueChange = { value ->
+//                        totalReturnAmount = value
+////                        winNumberAmount = if (totalReturnAmount != "") {
+////                            (totalReturnAmount.toInt() / 80.0).roundToInt().toString()
+////                        } else {
+////                            ""
+////                        }
+//
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonText(text = "Our return amount?(20%)")
+//                CommonTextField(
+//                    text = mustReturnAmount,
+//                    onValueChange = { value ->
+//                        mustReturnAmount = value
+//                        totalReturnAmount = if (mustReturnAmount != "") {
+//                            (mustReturnAmount.toInt() * 20.0).roundToInt().toString()
 //                        } else {
 //                            ""
 //                        }
-
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "Our return amount?(20%)")
-                CommonTextField(
-                    text = mustReturnAmount,
-                    onValueChange = { value ->
-                        mustReturnAmount = value
-                        totalReturnAmount = if (mustReturnAmount != "") {
-                            (mustReturnAmount.toInt() * 20.0).roundToInt().toString()
-                        } else {
-                            ""
-                        }
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "Our total profit")
-                CommonTextField(
-                    text = ourTotalProfit,
-                    onValueChange = { value ->
-                        ourTotalProfit = value
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "Share Owner profit")
-                CommonTextField(
-                    text = profitForShareOwner,
-                    onValueChange = { value ->
-                        vm._profitForShareOwner.value = value
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                CommonText(text = "Manager Profit")
-                CommonTextField(
-                    text = profitForManager,
-                    onValueChange = { value ->
-                        vm._profitForManager.value = value
-                    },
-                    passwordVisibility = passwordVisibility,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .weight(1f), verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
-                    onClick = {
-                        vm.onActionCalculator(action = CalculatorAction.DeleteDbItem(itemId = 1L))
-                    }
-                ) {
-                    Text(text = "Delete item from DB")
-                }
-                OutlinedButton(
-                    onClick = {
-                        vm.onActionCalculator(action = CalculatorAction.DeleteAllItem)
-                    }
-                ) {
-                    Text(text = "All")
-                }
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonText(text = "Our total profit")
+//                CommonTextField(
+//                    text = ourTotalProfit,
+//                    onValueChange = { value ->
+//                        ourTotalProfit = value
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonText(text = "Share Owner profit")
+//                CommonTextField(
+//                    text = profitForShareOwner,
+//                    onValueChange = { value ->
+//                        vm._profitForShareOwner.value = value
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                CommonText(text = "Manager Profit")
+//                CommonTextField(
+//                    text = profitForManager,
+//                    onValueChange = { value ->
+//                        vm._profitForManager.value = value
+//                    },
+//                    passwordVisibility = passwordVisibility,
+//                )
+//            }
+//            Row(
+//                modifier = Modifier
+//                    .padding(top = 10.dp)
+//                    .weight(1f), verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Text(text = "Morning?")
+//                Switch(checked = switchState.value, onCheckedChange = {
+//                    isMorning ->
+//                    switchState.value = isMorning
+//                    vm.onActionCalculator(action = CalculatorAction.switchClick(
+//                        isMorning = isMorning
+//                    ))
+//                })
+//                OutlinedButton(
+//                    onClick = {
+//                        vm.onActionCalculator(action = CalculatorAction.DeleteDbItem(itemId = 1L))
+//                    }
+//                ) {
+//                    Text(text = "Delete item from DB")
+//                }
+//                OutlinedButton(
+//                    onClick = {
+//                        vm.onActionCalculator(action = CalculatorAction.DeleteAllItem)
+//                    }
+//                ) {
+//                    Text(text = "All")
+//                }
 //                    Log.d("Log from db", "${_payOff}")
-            }
+//            }
 //
 //            LazyColumn(
 //                modifier = Modifier
@@ -349,8 +474,9 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
 //                    Text(text = result.toString())
 //                }
 //            }
+            }
         }
-    }
+    )
 }
 
 @Composable
@@ -362,32 +488,46 @@ private fun percentCalculator(percent: Int) {
 
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun CommonTextField(text: String, onValueChange: (String) -> Unit, passwordVisibility: Boolean) {
-    BasicTextField(
+fun CommonTextField(
+    textFieldLabel: String,
+    text: String,
+    onValueChange: (String) -> Unit,
+    passwordVisibility: Boolean
+) {
+    OutlinedTextField(
+        modifier = Modifier.fillMaxWidth(),
         value = text,
         onValueChange = onValueChange,
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-        maxLines = 1,
-        textStyle = TextStyle(fontSize = 16.sp),
-//        modifier = Modifier.background(colorScheme.primary),
-        decorationBox = { innerTextField ->
-            Row(
-                Modifier
-                    .background(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        RoundedCornerShape(percent = 30)
-                    )
-                    .padding(8.dp)
-
-            ) {
-                // <-- Add this
-                innerTextField()
-            }
-        },
-        visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+        label = { Text(textFieldLabel) },
+        singleLine = true,
     )
+
+//    BasicTextField(
+//        value = text,
+//        onValueChange = onValueChange,
+//        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+//        maxLines = 1,
+//        textStyle = TextStyle(fontSize = 16.sp),
+////        modifier = Modifier.background(colorScheme.primary),
+//        decorationBox = { innerTextField ->
+//            Row(
+//                Modifier
+//                    .background(
+//                        MaterialTheme.colorScheme.primaryContainer,
+//                        RoundedCornerShape(percent = 30)
+//                    )
+//                    .padding(8.dp)
+//
+//            ) {
+//                // <-- Add this
+//                innerTextField()
+//            }
+//        },
+//        visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+//    )
 }
 
 @Composable
@@ -396,5 +536,15 @@ fun CommonText(text: String) {
         text = text, modifier = Modifier
             .padding(end = 8.dp)
             .width(220.dp), color = MaterialTheme.colorScheme.primary, fontSize = 16.sp
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CommonText(text: String, colors: Color) {
+    Text(
+        text = text, modifier = Modifier
+            .padding(end = 8.dp)
+            .width(220.dp), color = colors, fontSize = 16.sp
     )
 }
