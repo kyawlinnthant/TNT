@@ -35,7 +35,6 @@ import mdy.klt.myatmyat.ui.udf.HistoryListAction
 import mdy.klt.myatmyat.ui.udf.HistoryListEvent
 import timber.log.Timber
 import java.text.SimpleDateFormat
-import java.time.LocalDate
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,7 +44,6 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
     val shouldShowDialog = vm.historyListState.value.shouldShowDialog
     var visible by remember { mutableStateOf(true) }
     val context = LocalContext.current
-
     /** date picker */
     val datePickerDialog = DatePickerDialog(
         context,
@@ -61,6 +59,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
         Calendar.getInstance().get(Calendar.MONTH),
         Calendar.getInstance().get(Calendar.DAY_OF_MONTH),
     )
+
 
     LaunchedEffect(key1 = true) {
         vm.historyListEvent.collectLatest {
@@ -82,6 +81,8 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
     fun getCalculatedMonths( month: Int): String? {
         val c: Calendar = GregorianCalendar()
         c.add(Calendar.MONTH, -month)
+        c.set(Calendar.DAY_OF_MONTH, c.getActualMinimum(Calendar.DAY_OF_MONTH))
+        Timber.tag("get month").d("${c.timeInMillis}")
         val fullDate = SimpleDateFormat("yyyy-MM-dd-E")
         val day = SimpleDateFormat("E")
         Timber.tag("get month").d("${fullDate.format(c.time)}")
@@ -93,38 +94,36 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
     fun getCalculatedDays( day: Int): String? {
         val c: Calendar = GregorianCalendar()
         c.add(Calendar.DAY_OF_MONTH, -day)
+        c.set(Calendar.DAY_OF_WEEK, 2)
+        val dayOfWeek = c.get(Calendar.DAY_OF_WEEK)
         val fullDay = SimpleDateFormat("yyyy-MM-dd-E")
         val dayFormat = SimpleDateFormat("E")
-        val dayName = dayFormat.format(c.time).toString()
-        when(dayName) {
-            DaysOfWeek.MONDAY.dayName -> {
-                Timber.tag("Today is Monday").d("${dayFormat.format(c.time)}")
+        val dayName = fullDay.format(c.time)
+        when(dayOfWeek) {
+            Calendar.MONDAY -> {
+                Timber.tag("Today is Monday").d("Yes")
             }
-            DaysOfWeek.TUESDAY.dayName -> {
-                Timber.tag("Today is Tuesday").d("${dayFormat.format(c.time)}")
+            Calendar.TUESDAY -> {
+                Timber.tag("Today is Tuesday").d("Yes")
             }
-            DaysOfWeek.WEDNESDAY.dayName -> {
-                Timber.tag("Today is Wednesday").d("${dayFormat.format(c.time)}")
+            Calendar.WEDNESDAY -> {
+                Timber.tag("Today is Wednesday").d("Yes")
             }
-            DaysOfWeek.THURSDAY.dayName -> {
-                Timber.tag("Today is Thursday").d("${dayFormat.format(c.time)}")
+            Calendar.THURSDAY -> {
+                Timber.tag("Today is Thursday").d("Yes")
             }
-            DaysOfWeek.FRIDAY.dayName -> {
-                Timber.tag("Today is Friday").d("${dayFormat.format(c.time)}")
+            Calendar.FRIDAY -> {
+                Timber.tag("Today is Friday").d("Yes")
             }
-            DaysOfWeek.SATURDAY.dayName -> {
-                Timber.tag("Today is Saturday").d("${dayFormat.format(c.time)}")
+            Calendar.SATURDAY -> {
+                Timber.tag("Today is Saturday").d("Yes")
             }
-            DaysOfWeek.SUNDAY.dayName -> {
-                Timber.tag("Today is Sunday").d("${dayFormat.format(c.time)}")
-            }
-            "Fri" -> {
-                Timber.tag("Today is Sunday").d("${dayFormat.format(c.time)}")
+            Calendar.SUNDAY -> {
+                Timber.tag("Today is Sunday").d("Yes")
             }
         }
-        Timber.tag("get day").d("${fullDay.format(c.time)}")
-        Timber.tag("get day").d("${dayFormat.format(c.time)}")
-        Timber.tag("get day2").d("$dayName && ${DaysOfWeek.FRIDAY.dayName}")
+        Timber.tag("get day").d("$dayName")
+        Timber.tag("get day").d("$dayOfWeek")
 
         return fullDay.format(c.time).toString()
     }
@@ -220,8 +219,8 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                 Timber
                                     .tag("tzo.detail.trigger")
                                     .d("ok")
-                                getCalculatedDays(3)
-                                getCalculatedMonths(5)
+                                getCalculatedDays(7)
+                                getCalculatedMonths(2)
                                 vm.onActionHistoryList(
                                     action = HistoryListAction.ShowHistoryDetail(id = result.id!!)
                                 )
@@ -260,7 +259,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = result.currentTime,
+                                        text = result.saveDate,
                                         style = MaterialTheme.typography.titleSmall,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )

@@ -1,5 +1,6 @@
 package mdy.klt.myatmyat.ui
 
+import android.annotation.SuppressLint
 import android.text.format.DateFormat
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
@@ -70,7 +71,14 @@ class MyViewModel @Inject constructor(
     val _shouldShowCurrent = mutableStateOf(false)
     private val shouldShowCurrent: MutableState<Boolean> get() = _shouldShowCurrent
 
+    val _date = mutableStateOf(getCurrentDate())
+    private val date: MutableState<String> get() = _date
 
+    val _dateInMilli = mutableStateOf(getCurrentDateInMilli())
+    private val dateInMilli: MutableState<Long> get() = _dateInMilli
+
+    val _shouldShowErrorDialog = mutableStateOf(false)
+    private val shouldShowErrorDialog: MutableState<Boolean> get() = _shouldShowErrorDialog
 
 
 
@@ -81,6 +89,14 @@ class MyViewModel @Inject constructor(
 
     init {
         getHistory()
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    fun getCurrentDate(): String {
+        val calendar = GregorianCalendar.getInstance()
+        val fullDate = SimpleDateFormat("yyyy-MM-dd")
+        Timber.tag("get month").d(fullDate.format(calendar.time))
+        return fullDate.format(calendar.time).toString()
     }
 
     fun percentOfTotal() {
@@ -153,8 +169,8 @@ class MyViewModel @Inject constructor(
         }
     }
 
-    fun getCurrentDateTime():Long{
-      return Calendar.getInstance().timeInMillis
+    fun getCurrentDateInMilli():Long{
+      return GregorianCalendar.getInstance().timeInMillis
     }
 
     private fun saveToDb(dataItem: PayOff) {
@@ -180,14 +196,14 @@ class MyViewModel @Inject constructor(
             repo.getItems().collectLatest {
                 _result.clear()
                 _result.addAll(it)
-                _result.sortByDescending { it.timeStamp }
+                _result.sortByDescending { it.currentTimeStamp }
             }
         }
     }
 
-     fun historyDateTime(): String {
+     fun historyDateTime(dateInMilli : Long): String {
         val dateFormat = "yyyy MMM dd 'at' hh:mm aa"
-        val date = getDate(Calendar.getInstance().timeInMillis)
+        val date = getDate(dateInMilli)
         val skeleton = DateFormat.getBestDateTimePattern(Locale.getDefault(), dateFormat)
         val formatter = SimpleDateFormat(skeleton, Locale.getDefault()).apply {
             timeZone = TimeZone.getDefault()
@@ -231,6 +247,29 @@ class MyViewModel @Inject constructor(
             is CalculatorAction.switchClick -> {
                 viewModelScope.launch {
                     _isMorning.value = action.isMorning
+                }
+            }
+            CalculatorAction.DatePickerClick -> {
+                viewModelScope.launch {
+                    _calculatorEvent.emit(CalculatorEvent.DatePickerClick)
+                }
+            }
+            is CalculatorAction.ChangeDate -> {
+                viewModelScope.launch {
+                    _date.value = action.date
+                    _dateInMilli.value = action.dateInMilli
+                }
+            }
+            CalculatorAction.ErrorDialogOk -> {
+                _historyListState.value = historyListState.value.copy(
+                   shouldShowErrorDialog = false
+                )
+            }
+            CalculatorAction.ShowErrorDialog -> {
+                viewModelScope.launch {
+                   _historyListState.value = historyListState.value.copy(
+                       shouldShowErrorDialog = true
+                   )
                 }
             }
         }

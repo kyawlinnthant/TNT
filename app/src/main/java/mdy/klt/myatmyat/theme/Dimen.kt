@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 data class Dimen(
+    val extra_tiny: Dp = 1.dp,
     val tiny: Dp = 2.dp,
     val small: Dp = 4.dp,
 

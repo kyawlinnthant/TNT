@@ -6,4 +6,7 @@
     <string name="confirm_button">Confirm</string>
     <string name="nav_calculator">Calculator</string>
     <string name="nav_history_list">History List</string>
+    <string name="ok">Ok</string>
+    <string name="date_error_title">Date Error</string>
+    <string name="date_error">Your date is greater than current Date.</string>
 </resources>

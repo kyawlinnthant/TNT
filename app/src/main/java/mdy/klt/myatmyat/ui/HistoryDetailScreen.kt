@@ -56,7 +56,7 @@ fun HistoryDetailScreen(navController: NavController, vm: MyViewModel, id: Long)
                     ) {
                         CommonText(text = "Date")
                         CommonText(
-                            text = vm.detailDateTime(milli = result.timeStamp)
+                            text = vm.detailDateTime(milli = result.saveDateMilli)
                         )
                     }
                     Row(

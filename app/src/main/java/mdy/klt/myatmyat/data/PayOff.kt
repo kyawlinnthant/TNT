@@ -7,8 +7,10 @@ import java.util.*
 
 @Entity(tableName = Constants.TABLE_NAME)
 data class PayOff(
+    val currentTimeStamp: Long,
+    val saveDate : String,
+    val saveDateMilli: Long,
     val winNumber: Int,
-    val timeStamp: Long,
     val total: Long,
     val percentOfTotal: Long,
     val commissionFee: Int,
@@ -20,7 +22,6 @@ data class PayOff(
     val shareOwnerProfit : Int,
     val managerProfit : Int,
     val isMorning : Boolean,
-    val currentTime : String,
 ){
     @PrimaryKey(autoGenerate = true)
     var id : Long? = null

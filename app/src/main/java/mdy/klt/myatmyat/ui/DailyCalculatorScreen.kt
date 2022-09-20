@@ -1,34 +1,43 @@
 package mdy.klt.myatmyat.ui
 
+import android.app.DatePickerDialog
+import android.widget.DatePicker
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.R
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.flow.collectLatest
-import mdy.klt.myatmyat.R
 import mdy.klt.myatmyat.data.PayOff
 import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.theme.dimen
 import mdy.klt.myatmyat.ui.udf.CalculatorAction
 import mdy.klt.myatmyat.ui.udf.CalculatorEvent
 import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.util.*
+import mdy.klt.myatmyat.R.*
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -50,17 +59,22 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
     var profitForShareOwner = vm._profitForShareOwner.value
     var profitForManager = vm._profitForManager.value
     var isMorning = vm._isMorning.value
+    var saveDateInMilli = vm._dateInMilli.value
+    var currentDateInMilli = vm.getCurrentDateInMilli()
 
 
     val radioOptions = listOf("Morning", "Evening")
     val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
+    val context = LocalContext.current
+    var date: String = vm._date.value
 
 
     val payOff = PayOff(
+        currentTimeStamp = 100L,
+        saveDate = "",
+        saveDateMilli = 100L,
         winNumber = 100,
-        timeStamp = 100L,
         total = 100L,
-        currentTime = "",
         percentOfTotal = 100L,
         commissionFee = 100,
         totalLeftAsset = 100,
@@ -78,12 +92,45 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
         vm._winNumberAmount.value = ""
         vm._shouldShowCurrent.value = false
         vm._isMorning.value = true
+        vm._date.value = vm.getCurrentDate()
     }
 
 
     var passwordVisibility by rememberSaveable {
         mutableStateOf(true)
     }
+
+    /** date picker */
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
+            val calendar = GregorianCalendar.getInstance()
+            calendar.set(Calendar.YEAR, year)
+            calendar.set(Calendar.MONTH, month)
+            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            val currentDateInMilli = Calendar.getInstance()
+            val dateFormet = SimpleDateFormat("yyyy-MM-dd")
+            val fullDate = dateFormet.format(calendar.time)
+            val fullDateInMilli = calendar.timeInMillis
+            Timber.tag("fullDate").d("$fullDateInMilli")
+            Timber.tag("currentDate").d("${Calendar.getInstance().timeInMillis}")
+            if(fullDateInMilli > GregorianCalendar.getInstance().timeInMillis) {
+                vm.onActionCalculator(
+                    CalculatorAction.ShowErrorDialog
+                )
+            } else {
+                vm.onActionCalculator(
+                    CalculatorAction.ChangeDate(
+                        date = fullDate,
+                        dateInMilli = fullDateInMilli
+                    )
+                )
+            }
+        },
+        Calendar.getInstance().get(Calendar.YEAR),
+        Calendar.getInstance().get(Calendar.MONTH),
+        Calendar.getInstance().get(Calendar.DAY_OF_MONTH),
+    )
 
 
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -94,8 +141,26 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                 CalculatorEvent.NavigateToHistoryList -> {
                     navController.navigate(Destinations.HistoryList.route)
                 }
+                CalculatorEvent.DatePickerClick -> {
+                    datePickerDialog.show()
+                }
             }
         }
+    }
+
+    if(vm.historyListState.value.shouldShowErrorDialog) {
+        CommonDialog(
+            modifier = Modifier.fillMaxWidth(),
+            title = stringResource(id = string.date_error_title),
+            text = stringResource(id = string.date_error),
+            confirmButtonLabel = stringResource(id = string.ok),
+            confirmButtonType = ButtonType.TONAL_BUTTON,
+            confirmButtonAction = {
+                vm.onActionCalculator(
+                    CalculatorAction.ErrorDialogOk
+                )
+            }
+        )
     }
 
 
@@ -140,8 +205,32 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                         .background(MaterialTheme.colorScheme.surface)
                         .padding(MaterialTheme.dimen.base_2x)
                 ) {
+                    Button(
+                        shape = RectangleShape,
+                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.surface),
+                        onClick = { vm.onActionCalculator(
+                            action = CalculatorAction.DatePickerClick
+                        )},
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        Row(modifier = Modifier.align(Alignment.CenterVertically)) {
+                            Text(date, color = MaterialTheme.colorScheme.onSurface)
+                            Icon(
+                                imageVector = Icons.Outlined.ArrowDropDown,
+                                contentDescription = "Dropdown",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(0.5f),
+                                modifier = Modifier
+                                    .size(20.dp)
+                            )
+                        }
+                    }
+
                     Column(
-                        modifier = Modifier.padding(MaterialTheme.dimen.base_3x),
+                        modifier = Modifier.padding(
+                            bottom = MaterialTheme.dimen.base_3x,
+                            start = MaterialTheme.dimen.base_2x,
+                            end = MaterialTheme.dimen.base_2x
+                        ),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base_2x)
                     ) {
@@ -216,7 +305,6 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                                     Text(
                                         text = text,
                                     )
-
                                 }
                             }
                         }
@@ -230,9 +318,10 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                                 action = CalculatorAction.SaveDataToDb(
                                     data = payOff.copy(
                                         winNumber = winNumber.toInt(),
-                                        timeStamp = vm.getCurrentDateTime(),
+                                        currentTimeStamp = currentDateInMilli,
+                                        saveDateMilli = saveDateInMilli,
                                         total = total.toLong(),
-                                        currentTime = vm.historyDateTime(),
+                                        saveDate = vm.historyDateTime(dateInMilli = saveDateInMilli),
                                         percentOfTotal = percentOfTotal.toLong(),
                                         commissionFee = commissionFee.toInt(),
                                         totalLeftAsset = totalLeft.toInt(),

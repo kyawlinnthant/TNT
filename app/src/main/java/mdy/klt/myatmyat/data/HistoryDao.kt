@@ -19,7 +19,7 @@ interface HistoryDao {
     @Query("DELETE FROM ${Constants.TABLE_NAME} WHERE id = :id ")
     suspend fun deleteItemHistory(id: Long)
 
-    @Query("SELECT * FROM ${Constants.TABLE_NAME} ORDER BY currentTime DESC")
+    @Query("SELECT * FROM ${Constants.TABLE_NAME} ORDER BY saveDateMilli DESC")
     fun getAllHistory() : Flow<List<PayOff>>
 
     @Query("SELECT SUM(totalProfit) FROM ${Constants.TABLE_NAME}")
