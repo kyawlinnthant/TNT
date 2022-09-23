@@ -28,7 +28,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import mdy.klt.myatmyat.data.PayOff
 import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.theme.dimen
@@ -38,6 +40,7 @@ import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 import mdy.klt.myatmyat.R.*
+import mdy.klt.myatmyat.ui.components.DateDialog
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -67,25 +70,8 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
     val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
     val context = LocalContext.current
     var date: String = vm._date.value
+    val scope = rememberCoroutineScope()
 
-
-    val payOff = PayOff(
-        currentTimeStamp = 100L,
-        saveDate = "",
-        saveDateMilli = 100L,
-        winNumber = 100,
-        total = 100L,
-        percentOfTotal = 100L,
-        commissionFee = 100,
-        totalLeftAsset = 100,
-        winNumberAmount = 100,
-        totalReturnAmount = 100,
-        ourReturnAmount = 100L,
-        shareOwnerProfit = 100,
-        totalProfit = 100L,
-        managerProfit = 100,
-        isMorning = true
-    )
 
     LaunchedEffect(key1 = true) {
         vm._total.value = ""
@@ -136,6 +122,7 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
     val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(key1 = true) {
+        vm._dateInMilli.value = vm.getCurrentDateInMilli()
         vm.calculatorEvent.collectLatest {
             when (it) {
                 CalculatorEvent.NavigateToHistoryList -> {
@@ -316,7 +303,7 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                         Button(modifier = Modifier, onClick = {
                             vm.onActionCalculator(
                                 action = CalculatorAction.SaveDataToDb(
-                                    data = payOff.copy(
+                                    data = vm.initialValue.value.copy(
                                         winNumber = winNumber.toInt(),
                                         currentTimeStamp = currentDateInMilli,
                                         saveDateMilli = saveDateInMilli,

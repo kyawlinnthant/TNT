@@ -21,6 +21,10 @@ class HistoryRepositoryImpl @Inject constructor(
         dao.deleteItemHistory(id = id)
     }
 
+    override suspend fun getHistoryWithDate(startDate: Long, endDate: Long): Flow<List<PayOff>> {
+        return dao.getHistoryWithDate(startDate = startDate, endDate = endDate)
+    }
+
     override suspend fun getItems(): Flow<List<PayOff>> {
         return dao.getAllHistory()
     }
