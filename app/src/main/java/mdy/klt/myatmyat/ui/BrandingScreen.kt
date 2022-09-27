@@ -13,16 +13,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
-import mdy.klt.myatmyat.R
 import mdy.klt.myatmyat.navigation.destination.Destinations
-import mdy.klt.myatmyat.theme.Dimen
 import mdy.klt.myatmyat.theme.dimen
+import mdy.klt.myatmyat.*
+import mdy.klt.myatmyat.R
 
 @Composable
 fun BrandingScreen(navController: NavController) {

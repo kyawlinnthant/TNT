@@ -3,10 +3,8 @@ package mdy.klt.myatmyat.ui
 import androidx.compose.material3.NavigationBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import mdy.klt.myatmyat.navigation.destination.Destinations
 
 @Composable
 fun BottomBar(navController: NavHostController) {

@@ -1,8 +1,5 @@
 package mdy.klt.myatmyat.ui
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.rounded.Menu
 import mdy.klt.myatmyat.R
 import mdy.klt.myatmyat.navigation.destination.Destinations
 

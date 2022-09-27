@@ -6,13 +6,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.R
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -28,10 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import mdy.klt.myatmyat.data.PayOff
 import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.theme.dimen
 import mdy.klt.myatmyat.ui.udf.CalculatorAction
@@ -40,7 +38,6 @@ import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 import mdy.klt.myatmyat.R.*
-import mdy.klt.myatmyat.ui.components.DateDialog
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -69,6 +66,9 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
     val radioOptions = listOf("Morning", "Evening")
     val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
     val context = LocalContext.current
+    var isWinNumberError by remember { mutableStateOf(false)}
+    var isTotalInputError by remember { mutableStateOf(false)}
+    var isReturnInputError by remember { mutableStateOf(false)}
     var date: String = vm._date.value
     val scope = rememberCoroutineScope()
 
@@ -76,6 +76,7 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
     LaunchedEffect(key1 = true) {
         vm._total.value = ""
         vm._winNumberAmount.value = ""
+        vm._winNumber.value = ""
         vm._shouldShowCurrent.value = false
         vm._isMorning.value = true
         vm._date.value = vm.getCurrentDate()
@@ -85,6 +86,30 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
     var passwordVisibility by rememberSaveable {
         mutableStateOf(true)
     }
+
+    fun getProfitForManagerEvening(){
+
+    }
+
+
+    fun calculateValidator(): Boolean {
+        if(vm._winNumber.value.length<2) {
+            Timber.tag("tzo.win number").d("error")
+            isWinNumberError = true
+        } else {
+            isWinNumberError = false
+        }
+        if (vm._total.value == "") {
+            Timber.tag("tzo.total value").d("error")
+            isTotalInputError = true
+        }
+        if (vm._winNumberAmount.value == "") {
+            Timber.tag("tzo.win number amount").d("error")
+            isReturnInputError = true
+        }
+        return !isWinNumberError && !isTotalInputError && !isReturnInputError
+    }
+
 
     /** date picker */
     val datePickerDialog = DatePickerDialog(
@@ -157,7 +182,7 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
             modifier = Modifier,
             title = {
                 Text(
-                    text = "Myat Myat",
+                    text = "How much we can",
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
@@ -183,7 +208,8 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                         indication = null,
                         onClick = {
                             keyboardController?.hide()
-                        }),
+                        }
+                    ).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base)
             ) {
                 Column(
@@ -230,15 +256,20 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                             length = 2,
                             onFilled = {
                                 Timber.tag("tzo.onfill").d("$it")
+                                if(it.length == 2) {
+                                  isWinNumberError = false
+                                }
                                 vm._winNumber.value = it
                             },
-                            isError = false,
+                            isError = isWinNumberError,
+
                         )
                     }
                     CommonTextField(
                         textFieldLabel = "Total Amount",
                         text = total,
                         onValueChange = { value ->
+                            isTotalInputError = false
                             vm._total.value = value
                             vm.percentOfTotal()
                             vm.commissionFee()
@@ -247,20 +278,23 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                             vm.profitForShareOwner()
                             vm.profitForManager()
                         },
-                        passwordVisibility = passwordVisibility
+                        passwordVisibility = passwordVisibility,
+                        isError = isTotalInputError
                     )
                     CommonTextField(
-                        textFieldLabel = "Compensation Amount",
+                        textFieldLabel = "Return Amount",
                         text = winNumberAmount,
                         onValueChange = { value ->
-                            vm._winNumberAmount.value = value
+                            isReturnInputError = false
+                                vm._winNumberAmount.value = value
                             vm.totalReturnAmount()
                             vm.mustReturnAmount()
                             vm.ourTotalProfit()
                             vm.profitForShareOwner()
                             vm.profitForManager()
                         },
-                        passwordVisibility = passwordVisibility
+                        passwordVisibility = passwordVisibility,
+                        isError = isReturnInputError
                     )
                     VerticalSpacerBase()
                     Row(
@@ -301,30 +335,36 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                         horizontalArrangement = Arrangement.End
                     ) {
                         Button(modifier = Modifier, onClick = {
-                            vm.onActionCalculator(
-                                action = CalculatorAction.SaveDataToDb(
-                                    data = vm.initialValue.value.copy(
-                                        winNumber = winNumber.toInt(),
-                                        currentTimeStamp = currentDateInMilli,
-                                        saveDateMilli = saveDateInMilli,
-                                        total = total.toLong(),
-                                        saveDate = vm.historyDateTime(dateInMilli = saveDateInMilli),
-                                        percentOfTotal = percentOfTotal.toLong(),
-                                        commissionFee = commissionFee.toInt(),
-                                        totalLeftAsset = totalLeft.toInt(),
-                                        winNumberAmount = winNumberAmount.toInt(),
-                                        totalReturnAmount = totalReturnAmount.toLong(),
-                                        ourReturnAmount = mustReturnAmount.toLong(),
-                                        totalProfit = ourTotalProfit.toLong(),
-                                        shareOwnerProfit = profitForShareOwner.toInt(),
-                                        managerProfit = profitForManager.toInt(),
-                                        isMorning = isMorning
+                          if(calculateValidator()) {
+                                vm.onActionCalculator(
+                                    action = CalculatorAction.SaveDataToDb(
+                                        data = vm.initialValue.value.copy(
+                                            winNumber = winNumber,
+                                            currentTimeStamp = currentDateInMilli,
+                                            saveDateMilli = saveDateInMilli,
+                                            total = total.toLong(),
+                                            saveDate = vm.historyDateTime(dateInMilli = saveDateInMilli),
+                                            percentOfTotal = percentOfTotal.toLong(),
+                                            commissionFee = commissionFee.toLong(),
+                                            totalLeftAsset = totalLeft.toLong(),
+                                            winNumberAmount = winNumberAmount.toLong(),
+                                            totalReturnAmount = totalReturnAmount.toLong(),
+                                            ourReturnAmount = mustReturnAmount.toLong(),
+                                            totalProfit = ourTotalProfit.toLong(),
+                                            shareOwnerProfit = profitForShareOwner.toLong(),
+                                            managerProfit = if(!isMorning){
+                                                0
+                                            } else {
+                                                profitForManager.toLong()
+                                            },
+                                            isMorning = isMorning
+                                        )
                                     )
                                 )
-                            )
-                            vm.onActionCalculator(
-                                action = CalculatorAction.NavigateToHistoryList
-                            )
+                                vm.onActionCalculator(
+                                    action = CalculatorAction.NavigateToHistoryList
+                                )
+                            }
                         }) {
                             Text(text = "Calculate")
                         }
@@ -570,15 +610,21 @@ fun CommonTextField(
     textFieldLabel: String,
     text: String,
     onValueChange: (String) -> Unit,
-    passwordVisibility: Boolean
+    passwordVisibility: Boolean,
+    isError: Boolean
 ) {
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
         value = text,
-        onValueChange = onValueChange,
+        onValueChange = {
+                        if(it.length <= 15){
+                            onValueChange(it)
+                        }
+        },
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
         label = { Text(textFieldLabel) },
         singleLine = true,
+        isError = isError
     )
 
 //    BasicTextField(

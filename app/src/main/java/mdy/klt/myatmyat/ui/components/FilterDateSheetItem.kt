@@ -145,15 +145,15 @@ fun FilterDateItemContent(
 }
 
 private val filterDateData = mutableListOf(
-    drawable.ic_calculator to string.all_time,
-    drawable.ic_calculator to string.today,
-    drawable.ic_calculator to string.yesterday,
-    drawable.ic_calculator to string.this_week,
-    drawable.ic_calculator to string.last_week,
-    drawable.ic_calculator to string.this_month,
-    drawable.ic_calculator to string.last_month,
-    drawable.ic_calculator to string.single_day,
-    drawable.ic_calculator to string.date_range,
+    drawable.ic_history to string.all_time,
+    drawable.ic_history to string.today,
+    drawable.ic_history to string.yesterday,
+    drawable.ic_history to string.this_week,
+    drawable.ic_history to string.last_week,
+    drawable.ic_history to string.this_month,
+    drawable.ic_history to string.last_month,
+    drawable.ic_history to string.single_day,
+    drawable.ic_history to string.date_range,
 ).map { DrawableStringPair(it.first, it.second) }
 
 private data class DrawableStringPair(

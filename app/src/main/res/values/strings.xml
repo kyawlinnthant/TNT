@@ -2,6 +2,7 @@
     <string name="app_name">MyatMyat</string>
     <string name="delete_confirm_title">Delete</string>
     <string name="delete_confirm">Are you sure to delete?</string>
+    <string name="delete_all_confirm">Are you sure to delete all history?</string>
     <string name="cancel_button">Cancel</string>
     <string name="confirm_button">Confirm</string>
     <string name="nav_calculator">Calculator</string>
@@ -9,6 +10,9 @@
     <string name="ok">OK</string>
     <string name="date_error_title">Date Error</string>
     <string name="date_error">Your date is greater than current Date.</string>
+    <string name="start_date_error">Your start date is greater than end Date.</string>
+    <string name="end_date_error">Your end date is smaller than start Date.</string>
+    <string name="end_date_error_two">Your end date is greater than current Date.</string>
     <string name="select_date">Select Date Filter</string>
     <string name="all_time">All Time</string>
     <string name="today">Today</string>

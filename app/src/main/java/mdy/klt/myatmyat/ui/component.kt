@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.DefaultShadowColor
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.DialogProperties
 
@@ -25,7 +26,7 @@ fun CommonDialog(
 
     confirmButtonLabel: String = "",
     confirmButtonType: ButtonType? = null,
-    confirmButtonColors: Color = MaterialTheme.colorScheme.primary,
+    confirmButtonColors: Color ?= MaterialTheme.colorScheme.onPrimary,
     confirmButtonLabelColors: Color = MaterialTheme.colorScheme.onPrimary,
     confirmButtonAction: () -> Unit = {}
 
@@ -64,7 +65,7 @@ fun CommonDialog(
                         confirmButtonLabel?.let {
                             Button(
                                 onClick = confirmButtonAction,
-                                colors = ButtonDefaults.buttonColors(confirmButtonColors)
+                                colors = ButtonDefaults.buttonColors(confirmButtonColors!!)
                             ) {
                                 Text(
                                     text = confirmButtonLabel,

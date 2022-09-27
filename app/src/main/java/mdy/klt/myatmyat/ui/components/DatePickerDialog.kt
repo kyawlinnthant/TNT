@@ -14,19 +14,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import androidx.navigation.NavController
+import mdy.klt.myatmyat.R
 import mdy.klt.myatmyat.theme.dimen
 import mdy.klt.myatmyat.ui.MyViewModel
 import mdy.klt.myatmyat.ui.udf.HistoryListAction
+import timber.log.Timber
+import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun DateDialog(
-               vm: MyViewModel,
-               disMissDialog : () -> Unit = {}
+    vm: MyViewModel,
+    disMissDialog: () -> Unit = {},
 ) {
-
     val context = LocalContext.current
+    val startDate = vm._startDate.value
+    val endDate = vm._endDate.value
+    val startDateMilli = vm._startDateMilli.value
+    val endDateMilli = vm._endDateMilli.value
+
     /** date picker */
     val startDatePickerDialog = DatePickerDialog(
         context,
@@ -36,10 +42,19 @@ fun DateDialog(
             calendar.set(Calendar.YEAR, year)
             calendar.set(Calendar.MONTH, month)
             calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            val dateFormet = SimpleDateFormat("dd-MM-yyyy")
+            val fullDate = dateFormet.format(calendar.time)
             val fullDateInMilli = calendar.timeInMillis
-            vm.onActionHistoryList(
-                action = HistoryListAction.FilterDate(date = fullDateInMilli)
-            )
+            Timber.tag("fullDate").d("$fullDateInMilli")
+            Timber.tag("currentDate").d("${Calendar.getInstance().timeInMillis}")
+            if (fullDateInMilli > endDateMilli) {
+                vm.onActionHistoryList(
+                    HistoryListAction.ShowStartDateErrorDialog
+                )
+            } else {
+                vm._startDate.value = fullDate
+                vm._startDateMilli.value = fullDateInMilli
+            }
         },
         Calendar.getInstance().get(Calendar.YEAR),
         Calendar.getInstance().get(Calendar.MONTH),
@@ -54,10 +69,23 @@ fun DateDialog(
             calendar.set(Calendar.YEAR, year)
             calendar.set(Calendar.MONTH, month)
             calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            val dateFormet = SimpleDateFormat("dd-MM-yyyy")
+            val fullDate = dateFormet.format(calendar.time)
             val fullDateInMilli = calendar.timeInMillis
-            vm.onActionHistoryList(
-                action = HistoryListAction.FilterDate(date = fullDateInMilli)
-            )
+            Timber.tag("fullDate").d("$fullDateInMilli")
+            Timber.tag("currentDate").d("${Calendar.getInstance().timeInMillis}")
+            if (fullDateInMilli < startDateMilli) {
+                vm.onActionHistoryList(
+                    HistoryListAction.ShowEndDateErrorDialog(text = context.getString(R.string.end_date_error))
+                )
+            } else if(fullDateInMilli > Calendar.getInstance().timeInMillis) {
+                vm.onActionHistoryList(
+                    HistoryListAction.ShowEndDateErrorDialog(text = context.getString(R.string.end_date_error_two)
+                ))
+            } else {
+                vm._endDate.value = fullDate
+                vm._endDateMilli.value = fullDateInMilli
+            }
         },
         Calendar.getInstance().get(Calendar.YEAR),
         Calendar.getInstance().get(Calendar.MONTH),
@@ -95,7 +123,7 @@ fun DateDialog(
                     TextButton(
                         onClick = { startDatePickerDialog.show() },
                     ) {
-                        Text(text = "19/09/2022")
+                        Text(text = startDate, color = MaterialTheme.colorScheme.onSurface)
                         Icon(
                             imageVector = Icons.Outlined.ArrowDropDown,
                             contentDescription = "Dropdown",
@@ -118,7 +146,7 @@ fun DateDialog(
                     TextButton(
                         onClick = { endDatePickerDialog.show() },
                     ) {
-                        Text(text = "19/09/2022")
+                        Text(text = endDate, color = MaterialTheme.colorScheme.onSurface)
                         Icon(
                             imageVector = Icons.Outlined.ArrowDropDown,
                             contentDescription = "Dropdown",
@@ -130,19 +158,23 @@ fun DateDialog(
                 }
             }
         },
+
         dismissButton = {
             Button(onClick = {
-             disMissDialog()
+                disMissDialog()
             }) {
                 Text(
                     text = "Cancel",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         },
         confirmButton = {
             Button(
-                onClick = {},
+                onClick = {
+                    vm.getHistoryDateRange()
+                    disMissDialog()
+                },
                 colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
             ) {
                 Text(

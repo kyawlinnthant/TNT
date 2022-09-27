@@ -17,6 +17,7 @@ import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,17 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import mdy.klt.myatmyat.R
@@ -49,6 +45,7 @@ import mdy.klt.myatmyat.ui.udf.HistoryListEvent
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.roundToLong
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
@@ -58,7 +55,9 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
     var visible by remember { mutableStateOf(true) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var filteredState by remember{ mutableStateOf(0)}
+    var filteredState by remember { mutableStateOf(0) }
+    var totalList: List<Long> = emptyList<Long>()
+    var counter = 0
 
     val modalBottomSheetState =
         rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
@@ -73,8 +72,9 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
             calendar.set(Calendar.MONTH, month)
             calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
             val fullDateInMilli = calendar.timeInMillis
+            vm._singleDateMilli.value = fullDateInMilli
             vm.onActionHistoryList(
-                action = HistoryListAction.FilterDate(date = fullDateInMilli)
+                action = HistoryListAction.FilterDate
             )
         },
         Calendar.getInstance().get(Calendar.YEAR),
@@ -82,8 +82,35 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
         Calendar.getInstance().get(Calendar.DAY_OF_MONTH),
     )
 
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val latestLifecycle = remember { mutableStateOf(Lifecycle.Event.ON_ANY) }
+    if (vm.historyListState.value.shouldShowStartDateErrorDialog) {
+        CommonDialog(
+            modifier = Modifier.fillMaxWidth(),
+            title = stringResource(id = R.string.date_error_title),
+            text = stringResource(id = R.string.start_date_error),
+            confirmButtonLabel = stringResource(id = R.string.ok),
+            confirmButtonType = ButtonType.TONAL_BUTTON,
+            confirmButtonAction = {
+                vm.onActionHistoryList(
+                    HistoryListAction.StartDateErrorDialogOk
+                )
+            }
+        )
+    }
+
+    if (vm.historyListState.value.shouldShowEndDateErrorDialog) {
+        CommonDialog(
+            modifier = Modifier.fillMaxWidth(),
+            title = stringResource(id = R.string.date_error_title),
+            text = vm.historyListState.value.endDateErrorText,
+            confirmButtonLabel = stringResource(id = R.string.ok),
+            confirmButtonType = ButtonType.TONAL_BUTTON,
+            confirmButtonAction = {
+                vm.onActionHistoryList(
+                    HistoryListAction.EndDateErrorDialogOk
+                )
+            }
+        )
+    }
 
 
     LaunchedEffect(key1 = true) {
@@ -116,6 +143,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
 //                vm.getHistoryDateRange()
 //            }
 //        }
+
 
         vm.historyListEvent.collectLatest {
             when (it) {
@@ -184,8 +212,6 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
     }
 
 
-
-
     if (vm.historyListState.value.shouldShowDialog) {
         CommonDialog(
             modifier = Modifier.fillMaxWidth(),
@@ -200,20 +226,49 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
             confirmButtonLabel = stringResource(id = R.string.confirm_button),
             confirmButtonType = ButtonType.TONAL_BUTTON,
             confirmButtonAction = {
-                if (vm.historyListState.value.deleteItem == vm.result.first().id) {
-                    vm._shouldShowCurrent.value = false
+                scope.launch {
+                    if (vm.historyListState.value.deleteItem == vm.result.first().id) {
+                        vm._shouldShowCurrent.value = false
+                    }
+                    vm.onActionHistoryList(
+                        action = HistoryListAction.DeleteHistoryItem(vm.historyListState.value.deleteItem)
+                    )
                 }
-                vm.onActionHistoryList(
-                    action = HistoryListAction.DeleteHistoryItem(vm.historyListState.value.deleteItem)
-                )
             }
         )
     }
 
-    if(vm.historyListState.value.shouldShowDatePickerDialog) {
-        DateDialog(vm = vm, disMissDialog = {vm.onActionHistoryList(
-            action = HistoryListAction.HideDatePickerDialog
-        )})
+    if (vm.historyListState.value.shouldShowDeleteAllDialog) {
+        CommonDialog(
+            modifier = Modifier.fillMaxWidth(),
+            title = stringResource(id = R.string.delete_confirm_title),
+            text = stringResource(id = R.string.delete_all_confirm),
+            dismissButtonLabel = stringResource(id = R.string.cancel_button),
+            dismissAction = {
+                vm.onActionHistoryList(
+                    action = HistoryListAction.DismissDeleteAllConfirmDialog
+                )
+            },
+            confirmButtonLabel = stringResource(id = R.string.confirm_button),
+            confirmButtonType = ButtonType.TONAL_BUTTON,
+            confirmButtonAction = {
+                scope.launch {
+                    vm.onActionHistoryList(
+                        action = HistoryListAction.DeleteAllHistoryItem
+                    )
+                }
+            },
+            confirmButtonColors = MaterialTheme.colorScheme.error
+
+        )
+    }
+
+    if (vm.historyListState.value.shouldShowDatePickerDialog) {
+        DateDialog(vm = vm, disMissDialog = {
+            vm.onActionHistoryList(
+                action = HistoryListAction.HideDatePickerDialog
+            )
+        })
     }
     ModalBottomSheetLayout(
         sheetContent = {
@@ -247,7 +302,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                 vm._shouldShowCurrent.value = false
                                 vm._filteredState.value = FilterType.YESTERDAY.select
                                 vm._titleName.value = "Yesterday Result"
-                               vm.getHistoryYesterday()
+                                vm.getHistoryYesterday()
                                 modalBottomSheetState.hide()
                             }
                         }
@@ -307,6 +362,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                 vm._shouldShowCurrent.value = false
                                 vm._filteredState.value = FilterType.DATE_RANGE.select
                                 vm._titleName.value = "Date Range Result"
+                                vm.dateRangeReset()
                                 vm.onActionHistoryList(
                                     action = HistoryListAction.ShowDatePickerDialog
                                 )
@@ -339,6 +395,17 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                         actions = {
                             IconButton(onClick = {
                                 vm.onActionHistoryList(
+                                    action = HistoryListAction.DeleteAllDialog
+                                )
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Delete,
+                                    contentDescription = "Delete All Data",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                            IconButton(onClick = {
+                                vm.onActionHistoryList(
                                     action = HistoryListAction.NavigateToCalculator
                                 )
                             }) {
@@ -350,7 +417,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                             }
                             IconButton(onClick = {
                                 vm.onActionHistoryList(
-                                    action = HistoryListAction.DatePickerDialog
+                                    action = HistoryListAction.DateFilterDialog
                                 )
                             }) {
                                 Icon(
@@ -364,6 +431,14 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                     )
                 },
                 content = {
+                    var profit : Long = 0L
+                    vm.result.forEach {
+                        profit += it.totalProfit
+                    }
+                    var profitForManager = 0L
+                        profitForManager = (profit*0.08).roundToLong()
+                    val profitForShare = profit - profitForManager
+                    Timber.tag("tzo.total.ui").d("${profit}")
                     LazyColumn(
                         modifier = Modifier
                             .padding(it)
@@ -377,10 +452,148 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                     ) {
                         itemsIndexed(vm.result) { index, result ->
                             if (index == 0) {
-                                Row(modifier = Modifier.padding(vertical = MaterialTheme.dimen.base)) {
-                                    Text(text = vm._titleName.value, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.outline)
+                                Row(modifier = Modifier.padding(vertical = MaterialTheme.dimen.base_2x)) {
+                                    Text(
+                                        text = vm._titleName.value,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
                                 }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base_2x),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(
+                                                MaterialTheme.dimen.base
+                                            )
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
+                                                    .background(MaterialTheme.colorScheme.surface)
+                                                    .padding(MaterialTheme.dimen.base_2x)
+                                            ) {
+                                                Text(
+                                                    text = "Total Profit",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                                if(profit > 0) {
+                                                    Text(
+                                                        text = profit.toString(),
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        text = profit.toString(),
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            }
+                                            Column(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
+                                                    .background(MaterialTheme.colorScheme.surface)
+                                                    .padding(MaterialTheme.dimen.base_2x)
+                                            ) {
+                                                Text(
+                                                    text = "Manager Profit",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                                if (profit > 0){
+                                                    Text(
+                                                        text = profitForManager.toString(),
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        text = "0",
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(
+                                                MaterialTheme.dimen.base
+                                            )
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
+                                                    .background(MaterialTheme.colorScheme.surface)
+                                                    .padding(MaterialTheme.dimen.base_2x)
+                                            ) {
+                                                Text(
+                                                    text = "Share Owner Profit",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                                if(profitForShare>0) {
+                                                    Text(
+                                                        text = profitForShare.toString(),
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        text = profitForShare.toString(),
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            }
+                                            Column(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
+                                                    .background(MaterialTheme.colorScheme.surface)
+                                                    .padding(MaterialTheme.dimen.base_2x)
+                                            ) {
+                                                Text(
+                                                    text = "Deposit Left",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                                if (profit > 0){
+                                                    Text(
+                                                        text = vm._totalDeposit.value.toString(),
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                } else {
+                                                    val deposit = vm._totalDeposit.value + profit
+                                                    Text(
+                                                        text = deposit.toString(),
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                             }
+                            VerticalSpacerBase2x()
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -423,7 +636,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
-                                                text = result.winNumber.toString(),
+                                                text = result.winNumber,
                                                 style = MaterialTheme.typography.titleMedium,
                                                 color = MaterialTheme.colorScheme.primary
                                             )
@@ -519,7 +732,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.outline
                                             )
-                                            if (result.totalProfit > 0) {
+                                            if (result.totalProfit > 0){
                                                 Text(
                                                     text = result.totalProfit.toString(),
                                                     style = MaterialTheme.typography.titleMedium,
@@ -561,7 +774,7 @@ fun InfiniteAnimation() {
 
     val heartSize by infiniteTransition.animateFloat(
         initialValue = 12.0f,
-        targetValue = 15.0f,
+        targetValue = 14.0f,
         animationSpec = infiniteRepeatable(
             animation = tween(800, delayMillis = 100, easing = FastOutLinearInEasing),
             repeatMode = RepeatMode.Reverse
@@ -573,4 +786,6 @@ fun InfiniteAnimation() {
         fontSize = heartSize.sp,
         fontWeight = FontWeight.Bold
     )
+
 }
+
