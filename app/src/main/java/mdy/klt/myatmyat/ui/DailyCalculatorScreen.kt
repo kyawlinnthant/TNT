@@ -29,7 +29,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import mdy.klt.myatmyat.navigation.destination.Destinations
 import mdy.klt.myatmyat.theme.dimen
 import mdy.klt.myatmyat.ui.udf.CalculatorAction
@@ -87,10 +89,6 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
         mutableStateOf(true)
     }
 
-    fun getProfitForManagerEvening(){
-
-    }
-
 
     fun calculateValidator(): Boolean {
         if(vm._winNumber.value.length<2) {
@@ -136,6 +134,7 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                         dateInMilli = fullDateInMilli
                     )
                 )
+                vm.getMorningTotalProfitWithDate(startDate = fullDateInMilli, endDate = fullDateInMilli)
             }
         },
         Calendar.getInstance().get(Calendar.YEAR),
@@ -313,6 +312,7 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                                                         isMorning = false
                                                     )
                                                 )
+                                                vm.getMorningTotalProfitWithDate(startDate = saveDateInMilli, endDate = saveDateInMilli)
                                             } else {
                                                 vm.onActionCalculator(
                                                     action = CalculatorAction.switchClick(
@@ -336,34 +336,37 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
                     ) {
                         Button(modifier = Modifier, onClick = {
                           if(calculateValidator()) {
-                                vm.onActionCalculator(
-                                    action = CalculatorAction.SaveDataToDb(
-                                        data = vm.initialValue.value.copy(
-                                            winNumber = winNumber,
-                                            currentTimeStamp = currentDateInMilli,
-                                            saveDateMilli = saveDateInMilli,
-                                            total = total.toLong(),
-                                            saveDate = vm.historyDateTime(dateInMilli = saveDateInMilli),
-                                            percentOfTotal = percentOfTotal.toLong(),
-                                            commissionFee = commissionFee.toLong(),
-                                            totalLeftAsset = totalLeft.toLong(),
-                                            winNumberAmount = winNumberAmount.toLong(),
-                                            totalReturnAmount = totalReturnAmount.toLong(),
-                                            ourReturnAmount = mustReturnAmount.toLong(),
-                                            totalProfit = ourTotalProfit.toLong(),
-                                            shareOwnerProfit = profitForShareOwner.toLong(),
-                                            managerProfit = if(!isMorning){
-                                                0
-                                            } else {
-                                                profitForManager.toLong()
-                                            },
-                                            isMorning = isMorning
-                                        )
-                                    )
-                                )
-                                vm.onActionCalculator(
-                                    action = CalculatorAction.NavigateToHistoryList
-                                )
+                              scope.launch {
+                                  vm.onActionCalculator(
+                                      action = CalculatorAction.SaveDataToDb(
+                                          data = vm.initialValue.value.copy(
+                                              winNumber = winNumber,
+                                              currentTimeStamp = currentDateInMilli,
+                                              saveDateMilli = saveDateInMilli,
+                                              total = total.toLong(),
+                                              saveDate = vm.historyDateTime(dateInMilli = saveDateInMilli),
+                                              percentOfTotal = percentOfTotal.toLong(),
+                                              commissionFee = commissionFee.toLong(),
+                                              totalLeftAsset = totalLeft.toLong(),
+                                              winNumberAmount = winNumberAmount.toLong(),
+                                              totalReturnAmount = totalReturnAmount.toLong(),
+                                              ourReturnAmount = mustReturnAmount.toLong(),
+                                              totalProfit = ourTotalProfit.toLong(),
+                                              shareOwnerProfit = profitForShareOwner.toLong(),
+                                              managerProfit = if(!isMorning){
+                                                  vm.profitForManagerEvening().toLong()
+                                              } else {
+                                                  vm.profitForManagerMorning().toLong()
+                                              },
+                                              isMorning = isMorning
+                                          )
+                                      )
+                                  )
+                                  vm.getMorningTotalProfitWithDate(startDate = saveDateInMilli, endDate = saveDateInMilli)
+                                  vm.onActionCalculator(
+                                      action = CalculatorAction.NavigateToHistoryList
+                                  )
+                              }
                             }
                         }) {
                             Text(text = "Calculate")

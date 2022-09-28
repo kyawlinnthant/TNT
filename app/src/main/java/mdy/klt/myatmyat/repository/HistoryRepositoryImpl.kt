@@ -13,6 +13,10 @@ class HistoryRepositoryImpl @Inject constructor(
         dao.insertPayOff(payOff = payOff)
     }
 
+    override suspend fun updateManagerProfit(managerProfit: Long, id: Long) {
+        dao.updateManagerProfit(managerProfit = managerProfit, id = id)
+    }
+
     override suspend fun deleteAllItem() {
         dao.deleteAllHistory()
     }

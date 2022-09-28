@@ -233,6 +233,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                     vm.onActionHistoryList(
                         action = HistoryListAction.DeleteHistoryItem(vm.historyListState.value.deleteItem)
                     )
+                    vm.getHistory()
                 }
             }
         )
@@ -432,11 +433,12 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                 },
                 content = {
                     var profit : Long = 0L
+                    var profitForManager = 0L
+
                     vm.result.forEach {
                         profit += it.totalProfit
+                        profitForManager += it.managerProfit
                     }
-                    var profitForManager = 0L
-                        profitForManager = (profit*0.08).roundToLong()
                     val profitForShare = profit - profitForManager
                     Timber.tag("tzo.total.ui").d("${profit}")
                     LazyColumn(

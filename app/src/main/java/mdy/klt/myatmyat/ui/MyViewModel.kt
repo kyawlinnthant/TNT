@@ -9,11 +9,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import mdy.klt.myatmyat.data.PayOff
 import mdy.klt.myatmyat.repository.HistoryRepository
 import mdy.klt.myatmyat.ui.udf.*
@@ -21,6 +20,7 @@ import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
+import kotlin.math.absoluteValue
 import kotlin.math.roundToLong
 
 @HiltViewModel
@@ -225,10 +225,6 @@ fun getHistorySingleDay() {
         }
     }
 
-    fun getPreviousProfit() {
-        getManagerHistoryWithDate(startDate = initialValue.value.saveDateMilli, endDate = initialValue.value.saveDateMilli)
-    }
-
     fun commissionFee() {
         _commissionFee.value = if (total.value.isEmpty()) {
             0
@@ -264,8 +260,7 @@ fun getHistorySingleDay() {
             "0"
         } else {
             _ourTotalProfit.value =
-                (totalLeft.value.toLong() - mustReturnAmount.value.toFloat()).roundToLong()
-                    .toString()
+                (totalLeft.value.toLong() - mustReturnAmount.value.toFloat()).roundToLong().toString()
         }
     }
 
@@ -280,19 +275,7 @@ fun getHistorySingleDay() {
     }
 
     fun profitForManager() {
-        _profitForManager.value = if (ourTotalProfit.value.isEmpty()) {
-            "0"
-        } else if (ourTotalProfit.value.toLong() < 0) {
-            "0"
-        } else {
-            (ourTotalProfit.value.toLong() * 0.08).roundToLong().toString()
-        }
-    }
-
-    fun profitForManagerEvening(date: Long) {
-        getManagerHistoryWithDate(startDate = date, endDate = date)
-
-        _profitForManager.value = if (ourTotalProfit.value.isEmpty()) {
+        profitForManager.value = if (ourTotalProfit.value.isEmpty()) {
             "0"
         } else if (ourTotalProfit.value.toLong() < 0) {
             "0"
@@ -351,7 +334,7 @@ fun getHistorySingleDay() {
                         getHistoryLastMonth()
                     }
                     "Single Day Result" -> {
-
+                        getHistorySingleDay()
                     }
                     "Date Range Result" -> {
                         getHistoryDateRange()
@@ -559,15 +542,53 @@ fun getHistorySingleDay() {
         }
     }
 
-    fun getManagerHistoryWithDate(startDate: Long, endDate: Long) {
-        viewModelScope.launch {
-            repo.getHistoryWithDate(startDate = startDate, endDate = endDate).collectLatest {
-                Timber.tag(("bar nyar day")).d("$it")
+    fun getMorningTotalProfitWithDate(startDate: Long, endDate: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repo.getHistoryWithDate(startDate = calendarDateStart(startDate), endDate = calendarDateEnd(endDate)).collectLatest {
                 _resultForManager.clear()
                 _resultForManager.addAll(it)
-                _resultForManager.sortByDescending { it.currentTimeStamp }
             }
         }
+    }
+
+    fun profitForManagerEvening(): String {
+        var profitForManager: String = ""
+        if(_resultForManager.isEmpty()) {
+            profitForManager = if (ourTotalProfit.value.isEmpty()) {
+                "0"
+            } else if (ourTotalProfit.value.toLong() < 0) {
+                "0"
+            } else {
+                (ourTotalProfit.value.toLong() * 0.08).roundToLong().toString()
+            }
+        } else {
+            val todayTotal = (ourTotalProfit.value.toLong() + _resultForManager.first().totalProfit)
+            Timber.tag("tzo.today.total").d("$todayTotal")
+            profitForManager = if(todayTotal > 0) {
+                (todayTotal*0.08).roundToLong().toString()
+            } else {
+                "0"
+            }
+            if(profitForManager.toLong()<=0) {
+                viewModelScope.launch {
+                    repo.updateManagerProfit(managerProfit = 0L, id = _resultForManager.first().id!!)
+                }
+            }
+        }
+        return profitForManager
+    }
+
+    fun profitForManagerMorning(): String {
+        var profitForManager: String = ""
+
+        profitForManager = if (ourTotalProfit.value.isEmpty()) {
+            "0"
+        } else if (ourTotalProfit.value.toLong() < 0) {
+            "0"
+        } else {
+            (ourTotalProfit.value.toLong() * 0.08).roundToLong().toString()
+        }
+        return profitForManager
     }
 
     fun historyDateTime(dateInMilli: Long): String {

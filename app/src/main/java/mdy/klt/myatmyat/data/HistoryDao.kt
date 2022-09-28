@@ -28,4 +28,7 @@ interface HistoryDao {
     @Query("SELECT SUM(totalProfit) FROM ${Constants.TABLE_NAME}")
     fun getTotalNetBalance() : Flow<Float>
 
+    @Query("UPDATE ${Constants.TABLE_NAME} SET managerProfit = :managerProfit WHERE id =:id")
+    suspend fun updateManagerProfit(managerProfit: Long, id: Long)
+
 }
