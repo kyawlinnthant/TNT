@@ -12,7 +12,7 @@ class FakeHistoryRepository : HistoryRepository {
         histories.add(payOff)
     }
 
-    override suspend fun deleteItem(payOff: PayOff) {
+    override suspend fun deleteAllItem(payOff: PayOff) {
         histories.remove(payOff)
     }
 
