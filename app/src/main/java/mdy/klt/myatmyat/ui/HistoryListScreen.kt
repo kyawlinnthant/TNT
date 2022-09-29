@@ -387,7 +387,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                     TopAppBar(
                         title = {
                             Text(
-                                text = "2D Data List",
+                                text = "Profit Data List",
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 color = MaterialTheme.colorScheme.onPrimary
@@ -440,7 +440,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                         profitForManager += it.managerProfit
                     }
                     val profitForShare = profit - profitForManager
-                    Timber.tag("tzo.total.ui").d("${profit}")
+                    Timber.tag("tzo.mg.profit").d("${profitForManager}")
                     LazyColumn(
                         modifier = Modifier
                             .padding(it)
@@ -515,7 +515,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.outline
                                                 )
-                                                if (profit > 0){
+                                                if (profitForManager > 0){
                                                     Text(
                                                         text = profitForManager.toString(),
                                                         style = MaterialTheme.typography.titleMedium,
@@ -545,7 +545,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                                     .padding(MaterialTheme.dimen.base_2x)
                                             ) {
                                                 Text(
-                                                    text = "Share Owner Profit",
+                                                    text = "Share Profit",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.outline
                                                 )

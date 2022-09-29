@@ -563,15 +563,23 @@ fun getHistorySingleDay() {
             }
         } else {
             val todayTotal = (ourTotalProfit.value.toLong() + _resultForManager.first().totalProfit)
-            Timber.tag("tzo.today.total").d("$todayTotal")
-            profitForManager = if(todayTotal > 0) {
-                (todayTotal*0.08).roundToLong().toString()
-            } else {
-                "0"
-            }
-            if(profitForManager.toLong()<=0) {
+            if(todayTotal<0) {
+                profitForManager = "0"
                 viewModelScope.launch {
                     repo.updateManagerProfit(managerProfit = 0L, id = _resultForManager.first().id!!)
+                }
+            } else {
+                if(ourTotalProfit.value.toLong()<0 && _resultForManager.first().totalProfit>0) {
+                    profitForManager = (todayTotal*0.08).roundToLong().toString()
+                    viewModelScope.launch {
+                        repo.updateManagerProfit(managerProfit = 0L, id = _resultForManager.first().id!!)
+                    }
+                }
+                else if (ourTotalProfit.value.toLong()>0 && _resultForManager.first().totalProfit<0) {
+                    profitForManager = (todayTotal*0.08).roundToLong().toString()
+                }
+                else if (ourTotalProfit.value.toLong()>0 && _resultForManager.first().totalProfit>0) {
+                    profitForManager = (ourTotalProfit.value.toLong()*0.08).roundToLong().toString()
                 }
             }
         }

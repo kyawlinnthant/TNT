@@ -181,7 +181,7 @@ fun DailyCalculatorScreen(name: String, vm: MyViewModel, navController: NavContr
             modifier = Modifier,
             title = {
                 Text(
-                    text = "How much we can",
+                    text = "How Much We Can",
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
