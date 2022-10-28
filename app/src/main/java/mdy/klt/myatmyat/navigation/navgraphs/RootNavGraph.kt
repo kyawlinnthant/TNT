@@ -21,12 +21,9 @@ fun RootNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Destinations.Branding.route,
+        startDestination = Destinations.DailyCalculator.route,
         route = Routes.APP_ROUTE
     ) {
-        composable(route = Destinations.Branding.route) {
-            BrandingScreen(navController = navController)
-        }
         composable(route = Destinations.DailyCalculator.route) {
             val parentEntry = remember {
                 navController.getBackStackEntry(Routes.APP_ROUTE)

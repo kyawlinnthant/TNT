@@ -1,7 +1,7 @@
 package mdy.klt.myatmyat.ui.domain
 
 enum class FilterType(val select: Int) {
-    All_TIME(0),
+    ALL_TIME(0),
     TODAY(1),
     YESTERDAY(2),
     THIS_WEEK(3),

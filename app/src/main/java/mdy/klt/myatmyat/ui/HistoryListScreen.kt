@@ -1,9 +1,9 @@
 package mdy.klt.myatmyat.ui
 
-import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.widget.DatePicker
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.flow.collectLatest
@@ -43,21 +44,14 @@ import mdy.klt.myatmyat.ui.domain.FilterType
 import mdy.klt.myatmyat.ui.udf.HistoryListAction
 import mdy.klt.myatmyat.ui.udf.HistoryListEvent
 import timber.log.Timber
-import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.roundToLong
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
 
-    val shouldShowDialog = vm.historyListState.value.shouldShowDialog
-    var visible by remember { mutableStateOf(true) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var filteredState by remember { mutableStateOf(0) }
-    var totalList: List<Long> = emptyList<Long>()
-    var counter = 0
 
     val modalBottomSheetState =
         rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
@@ -93,7 +87,9 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                 vm.onActionHistoryList(
                     HistoryListAction.StartDateErrorDialogOk
                 )
-            }
+            },
+            confirmButtonColors = MaterialTheme.colorScheme.onPrimary,
+            confirmButtonLabelColors = MaterialTheme.colorScheme.primary
         )
     }
 
@@ -108,43 +104,14 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                 vm.onActionHistoryList(
                     HistoryListAction.EndDateErrorDialogOk
                 )
-            }
+            },
+            confirmButtonColors = MaterialTheme.colorScheme.onPrimary,
+            confirmButtonLabelColors = MaterialTheme.colorScheme.primary
         )
     }
 
 
     LaunchedEffect(key1 = true) {
-//                when(filteredState) {
-//            FilterType.All_TIME.select ->  {
-//                vm.getHistory()
-//            }
-//            FilterType.TODAY.select -> {
-//                vm.getHistoryToday()
-//            }
-//            FilterType.YESTERDAY.select -> {
-//                vm.getHistoryYesterday()
-//            }
-//            FilterType.THIS_WEEK.select -> {
-//                vm.getHistoryThisWeek()
-//            }
-//            FilterType.LAST_WEEK.select -> {
-//                vm.getHistoryLastWeek()
-//            }
-//            FilterType.THIS_MONTH.select -> {
-//               vm.getHistoryThisMonth()
-//            }
-//            FilterType.LAST_MONTH.select -> {
-//                vm.getHistoryLastMonth()
-//            }
-//            FilterType.SINGLE_DAY.select -> {
-//                vm.getHistorySingleDay()
-//            }
-//            FilterType.DATE_RANGE.select -> {
-//                vm.getHistoryDateRange()
-//            }
-//        }
-
-
         vm.historyListEvent.collectLatest {
             when (it) {
                 HistoryListEvent.NavigateToCalculator -> {
@@ -160,57 +127,6 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
         }
     }
 
-    @SuppressLint("SimpleDateFormat")
-    fun getCalculatedMonths(month: Int): String? {
-        val c: Calendar = GregorianCalendar()
-        c.add(Calendar.MONTH, -month)
-        c.set(Calendar.DAY_OF_MONTH, c.getActualMinimum(Calendar.DAY_OF_MONTH))
-        Timber.tag("get month").d("${c.timeInMillis}")
-        val fullDate = SimpleDateFormat("yyyy-MM-dd-E")
-        val day = SimpleDateFormat("E")
-        Timber.tag("get month").d("${fullDate.format(c.time)}")
-        Timber.tag("get month").d("${day.format(c.time)}")
-        return fullDate.format(c.time).toString()
-    }
-
-    @SuppressLint("SimpleDateFormat")
-    fun getCalculatedDays(day: Int): String? {
-        val c: Calendar = GregorianCalendar()
-        c.add(Calendar.DAY_OF_MONTH, -day)
-        c.set(Calendar.DAY_OF_WEEK, 2)
-        val dayOfWeek = c.get(Calendar.DAY_OF_WEEK)
-        val fullDay = SimpleDateFormat("yyyy-MM-dd-E")
-        val dayFormat = SimpleDateFormat("E")
-        val dayName = fullDay.format(c.time)
-        when (dayOfWeek) {
-            Calendar.MONDAY -> {
-                Timber.tag("Today is Monday").d("Yes")
-            }
-            Calendar.TUESDAY -> {
-                Timber.tag("Today is Tuesday").d("Yes")
-            }
-            Calendar.WEDNESDAY -> {
-                Timber.tag("Today is Wednesday").d("Yes")
-            }
-            Calendar.THURSDAY -> {
-                Timber.tag("Today is Thursday").d("Yes")
-            }
-            Calendar.FRIDAY -> {
-                Timber.tag("Today is Friday").d("Yes")
-            }
-            Calendar.SATURDAY -> {
-                Timber.tag("Today is Saturday").d("Yes")
-            }
-            Calendar.SUNDAY -> {
-                Timber.tag("Today is Sunday").d("Yes")
-            }
-        }
-        Timber.tag("get day").d("$dayName")
-        Timber.tag("get day").d("$dayOfWeek")
-
-        return fullDay.format(c.time).toString()
-    }
-
 
     if (vm.historyListState.value.shouldShowDialog) {
         CommonDialog(
@@ -224,7 +140,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                 )
             },
             confirmButtonLabel = stringResource(id = R.string.confirm_button),
-            confirmButtonType = ButtonType.TONAL_BUTTON,
+            confirmButtonType = ButtonType.SOLID_BUTTON,
             confirmButtonAction = {
                 scope.launch {
                     if (vm.historyListState.value.deleteItem == vm.result.first().id) {
@@ -235,7 +151,9 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                     )
                     vm.getHistory()
                 }
-            }
+            },
+            confirmButtonColors = MaterialTheme.colorScheme.error,
+            confirmButtonLabelColors = MaterialTheme.colorScheme.onError
         )
     }
 
@@ -251,7 +169,7 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                 )
             },
             confirmButtonLabel = stringResource(id = R.string.confirm_button),
-            confirmButtonType = ButtonType.TONAL_BUTTON,
+            confirmButtonType = ButtonType.SOLID_BUTTON,
             confirmButtonAction = {
                 scope.launch {
                     vm.onActionHistoryList(
@@ -259,8 +177,8 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                     )
                 }
             },
-            confirmButtonColors = MaterialTheme.colorScheme.error
-
+            confirmButtonColors = MaterialTheme.colorScheme.error,
+            confirmButtonLabelColors = MaterialTheme.colorScheme.onError
         )
     }
 
@@ -277,11 +195,11 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                 title = stringResource(id = R.string.date_error_title),
                 onItemClick = {
                     when (it) {
-                        FilterType.All_TIME.select -> {
+                        FilterType.ALL_TIME.select -> {
                             Timber.tag("All Time").d("Click")
                             scope.launch {
                                 vm._shouldShowCurrent.value = false
-                                vm._filteredState.value = FilterType.All_TIME.select
+                                vm._filteredState.value = FilterType.ALL_TIME.select
                                 vm._titleName.value = "All Time Result"
                                 vm.getHistory()
                                 modalBottomSheetState.hide()
@@ -432,38 +350,286 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                     )
                 },
                 content = {
-                    var profit : Long = 0L
+                    var profit: Long = 0L
                     var profitForManager = 0L
+                    var profitForAgent = 0L
 
                     vm.result.forEach {
                         profit += it.totalProfit
                         profitForManager += it.managerProfit
+                        profitForAgent += it.commissionFee
                     }
-                    val profitForShare = profit - profitForManager
-                    Timber.tag("tzo.mg.profit").d("${profitForManager}")
-                    LazyColumn(
-                        modifier = Modifier
-                            .padding(it)
-                            .fillMaxSize()
-                            .background(
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                            )
-                            .padding(
-                                horizontal = MaterialTheme.dimen.base_2x
-                            )
-                    ) {
-                        itemsIndexed(vm.result) { index, result ->
-                            if (index == 0) {
-                                Row(modifier = Modifier.padding(vertical = MaterialTheme.dimen.base_2x)) {
-                                    Text(
-                                        text = vm._titleName.value,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
+                    val netProfit = profit - profitForManager
+                    val profitForShareOwner = netProfit / 5
+                    if(vm.result.isEmpty()) {
+                        Column(modifier = Modifier.padding(it)) {
+                            EmptyScreen(text = vm._titleName.value)
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .padding(it)
+                                .fillMaxSize()
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                                )
+                                .padding(
+                                    horizontal = MaterialTheme.dimen.base_2x
+                                )
+                        ) {
+                            itemsIndexed(vm.result) { index, result ->
+                                if (index == 0) {
+                                    Row(modifier = Modifier.padding(vertical = MaterialTheme.dimen.base)) {
+                                        Text(
+                                            text = vm._titleName.value,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.outline
+                                        )
+                                    }
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = MaterialTheme.dimen.base),
+                                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base_2x),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.weight(1f, fill = false),
+                                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(
+                                                    MaterialTheme.dimen.base
+                                                )
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clip(
+                                                            shape = RoundedCornerShape(
+                                                                MaterialTheme.dimen.base
+                                                            )
+                                                        )
+                                                        .background(MaterialTheme.colorScheme.surface)
+                                                        .padding(MaterialTheme.dimen.base_2x)
+                                                ) {
+                                                    Text(
+                                                        text = "Total Profit",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.outline
+                                                    )
+                                                    if (profit > 0) {
+                                                        Text(
+                                                            text = profit.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    } else {
+                                                        Text(
+                                                            text = profit.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.error,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clip(
+                                                            shape = RoundedCornerShape(
+                                                                MaterialTheme.dimen.base
+                                                            )
+                                                        )
+                                                        .background(MaterialTheme.colorScheme.surface)
+                                                        .padding(MaterialTheme.dimen.base_2x)
+                                                ) {
+                                                    Text(
+                                                        text = "Manager Profit",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.outline
+                                                    )
+                                                    if (profitForManager > 0) {
+                                                        Text(
+                                                            text = profitForManager.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    } else {
+                                                        Text(
+                                                            text = "0",
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.error,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(
+                                                    MaterialTheme.dimen.base
+                                                )
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clip(
+                                                            shape = RoundedCornerShape(
+                                                                MaterialTheme.dimen.base
+                                                            )
+                                                        )
+                                                        .background(MaterialTheme.colorScheme.surface)
+                                                        .padding(MaterialTheme.dimen.base_2x)
+                                                ) {
+                                                    Text(
+                                                        text = "Net Profit",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.outline
+                                                    )
+                                                    if (netProfit > 0) {
+                                                        Text(
+                                                            text = netProfit.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    } else {
+                                                        Text(
+                                                            text = netProfit.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.error,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clip(
+                                                            shape = RoundedCornerShape(
+                                                                MaterialTheme.dimen.base
+                                                            )
+                                                        )
+                                                        .background(MaterialTheme.colorScheme.surface)
+                                                        .padding(MaterialTheme.dimen.base_2x)
+                                                ) {
+                                                    Text(
+                                                        text = "Deposit Left",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.outline
+                                                    )
+                                                    if (profit > 0) {
+                                                        Text(
+                                                            text = vm._totalDeposit.value.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    } else {
+                                                        val deposit = vm._totalDeposit.value + profit
+                                                        Text(
+                                                            text = deposit.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.error,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(
+                                                    MaterialTheme.dimen.base
+                                                )
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clip(
+                                                            shape = RoundedCornerShape(
+                                                                MaterialTheme.dimen.base
+                                                            )
+                                                        )
+                                                        .background(MaterialTheme.colorScheme.surface)
+                                                        .padding(MaterialTheme.dimen.base_2x)
+                                                ) {
+                                                    Text(
+                                                        text = "Share Owner Profit",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.outline
+                                                    )
+                                                    if (profitForShareOwner > 0) {
+                                                        Text(
+                                                            text = profitForShareOwner.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    } else {
+                                                        Text(
+                                                            text = profitForShareOwner.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.error,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .clip(
+                                                            shape = RoundedCornerShape(
+                                                                MaterialTheme.dimen.base
+                                                            )
+                                                        )
+                                                        .background(MaterialTheme.colorScheme.surface)
+                                                        .padding(MaterialTheme.dimen.base_2x)
+                                                ) {
+                                                    Text(
+                                                        text = "Agent Fees",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.outline
+                                                    )
+                                                    if (profitForAgent > 0) {
+                                                        Text(
+                                                            text = profitForAgent.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    } else {
+                                                        Text(
+                                                            text = profitForAgent.toString(),
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            color = MaterialTheme.colorScheme.error,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                                 Row(
                                     modifier = Modifier
-                                        .fillMaxWidth(),
+                                        .fillMaxWidth()
+                                        .padding(bottom = MaterialTheme.dimen.base)
+                                        .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base_2x))
+                                        .clickable(onClick = {
+                                            vm.onActionHistoryList(
+                                                action = HistoryListAction.ShowHistoryDetail(id = result.id!!)
+                                            )
+                                        })
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .padding(
+                                            horizontal = MaterialTheme.dimen.base_2x,
+                                            vertical = MaterialTheme.dimen.base
+                                        ),
                                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base_2x),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -475,62 +641,94 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.spacedBy(
                                                 MaterialTheme.dimen.base
-                                            )
+                                            ),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Column(
+                                            Box(
                                                 modifier = Modifier
-                                                    .weight(1f)
-                                                    .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
-                                                    .background(MaterialTheme.colorScheme.surface)
-                                                    .padding(MaterialTheme.dimen.base_2x)
+                                                    .width(MaterialTheme.dimen.base_4x)
+                                                    .height(MaterialTheme.dimen.base_4x)
+                                                    .clip(shape = CircleShape)
+                                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                                contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
-                                                    text = "Total Profit",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.outline
+                                                    text = result.winNumber,
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    color = MaterialTheme.colorScheme.primary
                                                 )
-                                                if(profit > 0) {
-                                                    Text(
-                                                        text = profit.toString(),
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        color = MaterialTheme.colorScheme.primary
-                                                    )
+                                            }
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = result.saveDate,
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                if (result.isMorning) {
+                                                    Row(
+                                                        horizontalArrangement = Arrangement.spacedBy(
+                                                            MaterialTheme.dimen.tiny
+                                                        )
+                                                    ) {
+                                                        Text(
+                                                            modifier = Modifier.align(Alignment.CenterVertically),
+                                                            text = "MORNING",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.outline
+                                                        )
+                                                        Icon(
+                                                            painter = painterResource(id = R.drawable.ic_sun),
+                                                            contentDescription = "day",
+                                                            tint = MaterialTheme.colorScheme.outline,
+                                                            modifier = Modifier
+                                                                .size(12.dp)
+                                                                .align(Alignment.CenterVertically)
+                                                        )
+                                                    }
                                                 } else {
-                                                    Text(
-                                                        text = profit.toString(),
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
+                                                    Row(
+                                                        horizontalArrangement = Arrangement.spacedBy(
+                                                            MaterialTheme.dimen.tiny
+                                                        )
+                                                    ) {
+                                                        Text(
+                                                            modifier = Modifier.align(Alignment.CenterVertically),
+                                                            text = "EVENING",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.outline
+                                                        )
+                                                        Icon(
+                                                            painter = painterResource(id = R.drawable.ic_moon),
+                                                            contentDescription = "night",
+                                                            tint = MaterialTheme.colorScheme.outline,
+                                                            modifier = Modifier
+                                                                .size(12.dp)
+                                                                .align(Alignment.CenterVertically)
+                                                        )
+                                                    }
                                                 }
                                             }
-                                            Column(
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
-                                                    .background(MaterialTheme.colorScheme.surface)
-                                                    .padding(MaterialTheme.dimen.base_2x)
-                                            ) {
-                                                Text(
-                                                    text = "Manager Profit",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.outline
-                                                )
-                                                if (profitForManager > 0){
-                                                    Text(
-                                                        text = profitForManager.toString(),
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        color = MaterialTheme.colorScheme.primary
-                                                    )
-                                                } else {
-                                                    Text(
-                                                        text = "0",
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        color = MaterialTheme.colorScheme.error
+                                            if (index == 0 && vm._shouldShowCurrent.value) {
+                                                InfiniteAnimation()
+                                            }
+                                            IconButton(
+                                                modifier = Modifier,
+                                                onClick = {
+                                                    vm.onActionHistoryList(
+                                                        action = HistoryListAction.ShowDeleteConfirmDialog(
+                                                            id = result.id!!
+                                                        )
                                                     )
                                                 }
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(id = R.drawable.ic_outline_delete_24),
+                                                    contentDescription = "Delete",
+                                                    tint = MaterialTheme.colorScheme.error,
+                                                    modifier = Modifier.size(MaterialTheme.dimen.small_icon)
+                                                )
                                             }
                                         }
-
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.spacedBy(
@@ -541,211 +739,59 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
                                                 modifier = Modifier
                                                     .weight(1f)
                                                     .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
-                                                    .background(MaterialTheme.colorScheme.surface)
-                                                    .padding(MaterialTheme.dimen.base_2x)
+                                                    .background(
+                                                        MaterialTheme.colorScheme.primary.copy(
+                                                            alpha = 0.05f
+                                                        )
+                                                    )
+                                                    .padding(
+                                                        vertical = MaterialTheme.dimen.small,
+                                                        horizontal = MaterialTheme.dimen.base
+                                                    )
                                             ) {
                                                 Text(
-                                                    text = "Share Profit",
+                                                    text = "Total Value",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.outline
                                                 )
-                                                if(profitForShare>0) {
-                                                    Text(
-                                                        text = profitForShare.toString(),
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        color = MaterialTheme.colorScheme.primary
-                                                    )
-                                                } else {
-                                                    Text(
-                                                        text = profitForShare.toString(),
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
-                                                }
+                                                Text(
+                                                    text = result.total.toString(),
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
                                             }
                                             Column(
                                                 modifier = Modifier
                                                     .weight(1f)
                                                     .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
-                                                    .background(MaterialTheme.colorScheme.surface)
-                                                    .padding(MaterialTheme.dimen.base_2x)
+                                                    .background(
+                                                        MaterialTheme.colorScheme.primary.copy(
+                                                            alpha = 0.05f
+                                                        )
+                                                    )
+                                                    .padding(
+                                                        vertical = MaterialTheme.dimen.small,
+                                                        horizontal = MaterialTheme.dimen.base
+                                                    )
                                             ) {
                                                 Text(
-                                                    text = "Deposit Left",
+                                                    text = "Profit",
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.outline
                                                 )
-                                                if (profit > 0){
+                                                if (result.totalProfit > 0) {
                                                     Text(
-                                                        text = vm._totalDeposit.value.toString(),
+                                                        text = result.totalProfit.toString(),
                                                         style = MaterialTheme.typography.titleMedium,
                                                         color = MaterialTheme.colorScheme.primary
                                                     )
                                                 } else {
-                                                    val deposit = vm._totalDeposit.value + profit
                                                     Text(
-                                                        text = deposit.toString(),
+                                                        text = result.totalProfit.toString(),
                                                         style = MaterialTheme.typography.titleMedium,
                                                         color = MaterialTheme.colorScheme.error
                                                     )
                                                 }
-                                            }
-                                        }
-                                    }
-                                }
-
-                            }
-                            VerticalSpacerBase2x()
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = MaterialTheme.dimen.base)
-                                    .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base_2x))
-                                    .clickable(onClick = {
-                                        Timber
-                                            .tag("tzo.detail.trigger")
-                                            .d("ok")
-                                        vm.onActionHistoryList(
-                                            action = HistoryListAction.ShowHistoryDetail(id = result.id!!)
-                                        )
-                                        //   HistoryListAction.ShowHistoryDetail(id = result.id!!)
-                                    })
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .padding(
-                                        horizontal = MaterialTheme.dimen.base_2x,
-                                        vertical = MaterialTheme.dimen.base
-                                    ),
-                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base_2x),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(
-                                    modifier = Modifier.weight(1f, fill = false),
-                                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.dimen.base)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(
-                                            MaterialTheme.dimen.base
-                                        ),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .width(MaterialTheme.dimen.base_4x)
-                                                .height(MaterialTheme.dimen.base_4x)
-                                                .clip(shape = CircleShape)
-                                                .background(MaterialTheme.colorScheme.primaryContainer),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = result.winNumber,
-                                                style = MaterialTheme.typography.titleMedium,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = result.saveDate,
-                                                style = MaterialTheme.typography.titleSmall,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                            if (result.isMorning) {
-                                                Text(
-                                                    text = "MORNING",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.outline
-                                                )
-                                            } else {
-                                                Text(
-                                                    text = "EVENING",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.outline
-                                                )
-                                            }
-                                        }
-                                        if (index == 0 && vm._shouldShowCurrent.value) {
-                                            InfiniteAnimation()
-                                        }
-                                        IconButton(
-                                            modifier = Modifier,
-                                            onClick = {
-                                                vm.onActionHistoryList(
-                                                    action = HistoryListAction.ShowDeleteConfirmDialog(
-                                                        id = result.id!!
-                                                    )
-                                                )
-                                            }
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.ic_outline_delete_24),
-                                                contentDescription = "Delete",
-                                                tint = MaterialTheme.colorScheme.error,
-                                                modifier = Modifier.size(MaterialTheme.dimen.small_icon)
-                                            )
-                                        }
-                                    }
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(
-                                            MaterialTheme.dimen.base
-                                        )
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
-                                                .background(
-                                                    MaterialTheme.colorScheme.primary.copy(
-                                                        alpha = 0.05f
-                                                    )
-                                                )
-                                                .padding(
-                                                    vertical = MaterialTheme.dimen.small,
-                                                    horizontal = MaterialTheme.dimen.base
-                                                )
-                                        ) {
-                                            Text(
-                                                text = "Total Value",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.outline
-                                            )
-                                            Text(
-                                                text = result.total.toString(),
-                                                style = MaterialTheme.typography.titleMedium,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        }
-                                        Column(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(shape = RoundedCornerShape(MaterialTheme.dimen.base))
-                                                .background(
-                                                    MaterialTheme.colorScheme.primary.copy(
-                                                        alpha = 0.05f
-                                                    )
-                                                )
-                                                .padding(
-                                                    vertical = MaterialTheme.dimen.small,
-                                                    horizontal = MaterialTheme.dimen.base
-                                                )
-                                        ) {
-                                            Text(
-                                                text = "Profit",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.outline
-                                            )
-                                            if (result.totalProfit > 0){
-                                                Text(
-                                                    text = result.totalProfit.toString(),
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            } else {
-                                                Text(
-                                                    text = result.totalProfit.toString(),
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    color = MaterialTheme.colorScheme.error
-                                                )
                                             }
                                         }
                                     }
@@ -757,7 +803,6 @@ fun HistoryListScreen(navController: NavController, vm: MyViewModel) {
             )
         }
     )
-
 }
 
 @Composable
@@ -790,4 +835,5 @@ fun InfiniteAnimation() {
     )
 
 }
+
 

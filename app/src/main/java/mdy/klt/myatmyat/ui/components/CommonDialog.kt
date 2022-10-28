@@ -75,7 +75,7 @@ fun CommonDialog(
                     }
                     ButtonType.TONAL_BUTTON -> {
                         if (confirmButtonLabel.isNotEmpty()) {
-                            FilledTonalButton(onClick = { confirmButtonAction() }) {
+                            FilledTonalButton(onClick = { confirmButtonAction() }, colors = ButtonDefaults.buttonColors()) {
                                 Text(text = confirmButtonLabel)
                             }
                         }

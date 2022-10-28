@@ -23,4 +23,7 @@
     <string name="last_month">Last Month</string>
     <string name="single_day">Single Day</string>
     <string name="date_range">Date Range</string>
+    <string name="today_result">Today Result</string>
+    <string name="yesterday_result">Yesterday Result</string>
+
 </resources>

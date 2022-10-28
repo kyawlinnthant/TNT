@@ -26,8 +26,8 @@ fun CommonDialog(
 
     confirmButtonLabel: String = "",
     confirmButtonType: ButtonType? = null,
-    confirmButtonColors: Color ?= MaterialTheme.colorScheme.onPrimary,
-    confirmButtonLabelColors: Color = MaterialTheme.colorScheme.onPrimary,
+    confirmButtonColors: Color,
+    confirmButtonLabelColors: Color,
     confirmButtonAction: () -> Unit = {}
 
 ) {
@@ -65,7 +65,7 @@ fun CommonDialog(
                         confirmButtonLabel?.let {
                             Button(
                                 onClick = confirmButtonAction,
-                                colors = ButtonDefaults.buttonColors(confirmButtonColors!!)
+                                colors = ButtonDefaults.buttonColors(confirmButtonColors)
                             ) {
                                 Text(
                                     text = confirmButtonLabel,
@@ -99,8 +99,9 @@ fun CommonDialogPreview() {
         dismissButtonLabel = "",
         dismissAction = {},
         confirmButtonAction = {},
-        confirmButtonColors = MaterialTheme.colorScheme.primary,
+        confirmButtonColors = MaterialTheme.colorScheme.error,
         confirmButtonLabel = "Comfirm",
-        confirmButtonType = ButtonType.TONAL_BUTTON
+        confirmButtonType = ButtonType.TONAL_BUTTON,
+        confirmButtonLabelColors = MaterialTheme.colorScheme.error
     )
 }

@@ -41,8 +41,3 @@ fun DefaultPreview() {
         Greeting("Android")
     }
 }
-
-// val ourSoldPercentage = totalSoldAmount * 0.1 //10 percentage
-// val ourSoldNetBalance = ourPercentage * 1.7 //17 percentage commission
-// val ourPayoffPercentage = totalPayoffAmount * 0.1 //10 percentage
-// val ourWinningNetBalance = ourSoldNetBalance - ourPayoffPercentage

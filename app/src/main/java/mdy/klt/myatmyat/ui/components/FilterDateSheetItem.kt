@@ -26,12 +26,12 @@ fun FilterDateSheetItem(onItemClick: (moreActionStatus: Int) -> Unit) {
         content = {
             itemsIndexed(items = filterDateData) { index, item ->
                 when (index) {
-                    FilterType.All_TIME.select -> {
+                    FilterType.ALL_TIME.select -> {
                         FilterDateItemContent(
                             drawable = item.drawable,
                             text = item.text,
                             onItemClick = {
-                                onItemClick(FilterType.All_TIME.select)
+                                onItemClick(FilterType.ALL_TIME.select)
                             },
                         )
                     }

@@ -1,18 +1,23 @@
 package mdy.klt.myatmyat.ui
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.text.format.DateFormat
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.internal.Contexts
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
+import mdy.klt.myatmyat.R
 import mdy.klt.myatmyat.data.PayOff
 import mdy.klt.myatmyat.repository.HistoryRepository
 import mdy.klt.myatmyat.ui.udf.*
@@ -108,9 +113,6 @@ class MyViewModel @Inject constructor(
     val _titleName = mutableStateOf("All Time Result")
     private val titleName: MutableState<String> get() = _titleName
 
-    val _filterTotal = mutableStateOf(0L)
-    private val filterTotal: MutableState<Long> get() = _filterTotal
-
     var _realResult = mutableStateListOf<Long>()
     private val realResult: MutableList<Long> get() = _realResult
 
@@ -123,41 +125,11 @@ class MyViewModel @Inject constructor(
     val _totalDeposit = mutableStateOf(2500000L)
     private val totalDeposit: MutableState<Long> get() = _totalDeposit
 
-
+    
     init {
         viewModelScope.launch {
             getHistory()
         }
-//        }
-//        when(filteredState.value) {
-//            FilterType.All_TIME.select ->  {
-//                getHistory()
-//            }
-//            FilterType.TODAY.select -> {
-//                getHistoryWithDate(startDate = todayStartMillis(), endDate = todayEndMillis())
-//            }
-//            FilterType.YESTERDAY.select -> {
-//                getHistoryWithDate(startDate = yesterdayStartMillis(), endDate = yesterdayEndMillis())
-//            }
-//            FilterType.THIS_WEEK.select -> {
-//                getHistoryWithDate(startDate = weekStartMillis(), endDate = weekEndMillis())
-//            }
-//            FilterType.LAST_WEEK.select -> {
-//                getHistoryWithDate(startDate = previousWeekStartMillis(), endDate = previousWeekEndMillis())
-//            }
-//            FilterType.THIS_MONTH.select -> {
-//                getHistoryWithDate(startDate = currentMonthStartMillis(), endDate = currentMonthEndMillis())
-//            }
-//            FilterType.LAST_MONTH.select -> {
-//                getHistoryWithDate(startDate = previousMonthStartMillis(), endDate = previousMonthEndMillis())
-//            }
-//            FilterType.SINGLE_DAY.select -> {
-//                getHistoryWithDate(startDate = weekStartMillis(), endDate = weekEndMillis())
-//            }
-//            FilterType.DATE_RANGE.select -> {
-//
-//            }
-//        }
 
         Timber.tag("get History").d("trigger")
     }
@@ -312,8 +284,6 @@ fun getHistorySingleDay() {
                 Timber.tag(("history again")).d("$it")
                 Timber.tag("tzo.title.value").d("${_titleName.value}")
                 _result.clear()
-                _filterTotal.value = 0
-                _realResult.clear()
                 when (_titleName.value) {
                     "Today Result" -> {
                         getHistoryToday()
@@ -349,7 +319,7 @@ fun getHistorySingleDay() {
         }
     }
 
-    fun calendarDateStart(date: Long): Long {
+    private fun calendarDateStart(date: Long): Long {
         val c: Calendar = GregorianCalendar()
         c.timeInMillis = date
         c.set(Calendar.HOUR_OF_DAY, 0)
@@ -359,7 +329,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun calendarDateEnd(date: Long): Long {
+    private fun calendarDateEnd(date: Long): Long {
         val c: Calendar = GregorianCalendar()
         c.timeInMillis = date
         c.set(Calendar.HOUR_OF_DAY, 23)
@@ -369,7 +339,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun currentDateStart(): Calendar {
+    private fun currentDateStart(): Calendar {
         val c: Calendar = GregorianCalendar()
         c.set(Calendar.HOUR_OF_DAY, 0)
         c.clear(Calendar.MINUTE)
@@ -378,17 +348,17 @@ fun getHistorySingleDay() {
         return c
     }
 
-    fun currentDateStartMillis(): Long {
+    private fun currentDateStartMillis(): Long {
         val c: Calendar = currentDateStart()
         return c.timeInMillis
     }
 
 
-    fun todayStartMillis(): Long {
+    private fun todayStartMillis(): Long {
         return currentDateStartMillis()
     }
 
-    fun yesterdayStartMillis(): Long {
+    private fun yesterdayStartMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.add(Calendar.DAY_OF_MONTH, -1)
         c.set(Calendar.HOUR_OF_DAY, 0)
@@ -399,7 +369,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun weekStartMillis(): Long {
+    private fun weekStartMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.set(Calendar.DAY_OF_WEEK, c.firstDayOfWeek)
         c.set(Calendar.HOUR_OF_DAY, 0)
@@ -410,7 +380,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun previousWeekStartMillis(): Long {
+    private fun previousWeekStartMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.add(Calendar.WEEK_OF_YEAR, -1)
         c.set(Calendar.DAY_OF_WEEK, c.firstDayOfWeek)
@@ -424,7 +394,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun currentMonthStartMillis(): Long {
+    private fun currentMonthStartMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.set(Calendar.DAY_OF_MONTH, c.getActualMinimum(Calendar.DAY_OF_MONTH))
         c.set(Calendar.HOUR_OF_DAY, 0)
@@ -437,7 +407,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun previousMonthStartMillis(): Long {
+    private fun previousMonthStartMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.add(Calendar.MONTH, -1)
         c.set(Calendar.DAY_OF_MONTH, c.getActualMinimum(Calendar.DAY_OF_MONTH))
@@ -451,7 +421,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun weekEndMillis(): Long {
+    private fun weekEndMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.set(Calendar.DAY_OF_WEEK, Calendar.SATURDAY)
         c.set(Calendar.HOUR_OF_DAY, 23)
@@ -462,7 +432,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun todayEndMillis(): Long {
+    private fun todayEndMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.set(Calendar.HOUR_OF_DAY, 0)
         c.set(Calendar.MINUTE, 0)
@@ -476,7 +446,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun yesterdayEndMillis(): Long {
+    private fun yesterdayEndMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.add(Calendar.DAY_OF_MONTH, -1)
         c.set(Calendar.HOUR_OF_DAY, 0)
@@ -491,7 +461,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun previousWeekEndMillis(): Long {
+    private fun previousWeekEndMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.set(Calendar.DAY_OF_WEEK, c.firstDayOfWeek)
         c.add(Calendar.DAY_OF_MONTH, -1)
@@ -503,7 +473,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun currentMonthEndMillis(): Long {
+    private fun currentMonthEndMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.set(Calendar.DAY_OF_MONTH, c.getActualMaximum(Calendar.DAY_OF_MONTH))
         c.set(Calendar.HOUR_OF_DAY, 23)
@@ -516,7 +486,7 @@ fun getHistorySingleDay() {
         return c.timeInMillis
     }
 
-    fun previousMonthEndMillis(): Long {
+    private fun previousMonthEndMillis(): Long {
         val c: Calendar = GregorianCalendar()
         c.set(Calendar.DAY_OF_MONTH, c.getActualMinimum(Calendar.DAY_OF_MONTH))
         c.add(Calendar.DAY_OF_MONTH, -1)
@@ -531,7 +501,7 @@ fun getHistorySingleDay() {
     }
 
 
-    fun getHistoryWithDate(startDate: Long, endDate: Long) {
+    private fun getHistoryWithDate(startDate: Long, endDate: Long) {
         viewModelScope.launch {
             repo.getHistoryWithDate(startDate = startDate, endDate = endDate).collectLatest {
                 Timber.tag(("bar nyar day")).d("$it")
