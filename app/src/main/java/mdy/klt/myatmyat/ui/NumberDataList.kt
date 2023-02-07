@@ -16,7 +16,7 @@ fun NumberDataList() {
     val vm: MyViewModel = hiltViewModel()
 
     Scaffold(modifier = Modifier, topBar = {
-        SmallTopAppBar(
+        TopAppBar(
             modifier = Modifier,
             title = { Text(text = "Calculator") },
             colors = TopAppBarDefaults.smallTopAppBarColors(MaterialTheme.colorScheme.primary)
