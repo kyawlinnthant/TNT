@@ -48,7 +48,8 @@ class HistoryDaoTest {
             netBalance = 10f,
             tnt = 10f,
             each = 10f,
-            isMorning = false
+            isMorning = false,
+            totalBalance = 100f,
         )
         dao.insertPayOff(payoff)
         val payoffs = dao.getAllHistory().firstOrNull()
@@ -63,10 +64,11 @@ class HistoryDaoTest {
             netBalance = 10f,
             tnt = 10f,
             each = 10f,
-            isMorning = false
+            isMorning = false,
+            totalBalance = 100f,
         )
         dao.insertPayOff(payoff)
-        dao.deleteHistory(payoff)
+        dao.deleteAllHistory()
         val payoffs = dao.getAllHistory().firstOrNull()
         assertThat(payoffs).doesNotContain(payoff)
     }
@@ -79,7 +81,8 @@ class HistoryDaoTest {
             netBalance = 10f,
             tnt = 10f,
             each = 10f,
-            isMorning = false
+            isMorning = false,
+            totalBalance = 100f
         )
         val payoff2 = PayOff(
             id = 2,
@@ -87,7 +90,8 @@ class HistoryDaoTest {
             netBalance = 10f,
             tnt = 10f,
             each = 20f,
-            isMorning = false
+            isMorning = false,
+            totalBalance = 100f,
         )
         val payoff3 = PayOff(
             id = 3,
@@ -95,7 +99,8 @@ class HistoryDaoTest {
             netBalance = 10f,
             tnt = 10f,
             each = 30f,
-            isMorning = false
+            isMorning = false,
+            totalBalance = 100f
         )
         dao.insertPayOff(payoff1)
         dao.insertPayOff(payoff2)
@@ -112,7 +117,8 @@ class HistoryDaoTest {
             netBalance = 10f,
             tnt = 10f,
             each = 10f,
-            isMorning = false
+            isMorning = false,
+            totalBalance = 100f
         )
         val payoff2 = PayOff(
             id = 2,
@@ -120,7 +126,8 @@ class HistoryDaoTest {
             netBalance = 10f,
             tnt = 10f,
             each = 20f,
-            isMorning = false
+            isMorning = false,
+            totalBalance = 100f
         )
         val payoff3 = PayOff(
             id = 3,
@@ -128,7 +135,8 @@ class HistoryDaoTest {
             netBalance = 10f,
             tnt = 10f,
             each = 30f,
-            isMorning = false
+            isMorning = false,
+            totalBalance = 100f
         )
         dao.insertPayOff(payoff1)
         dao.insertPayOff(payoff2)

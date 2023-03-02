@@ -26,7 +26,8 @@ object AppModule {
             context,
             HistoryDatabase::class.java,
             Constants.DB_NAME
-        ).build()
+        )
+            .fallbackToDestructiveMigration().build()
     }
 
     @Provides

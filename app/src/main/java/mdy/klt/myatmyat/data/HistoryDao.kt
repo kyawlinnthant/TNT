@@ -10,13 +10,22 @@ interface HistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPayOff(payOff: PayOff)
 
-    @Delete(entity = PayOff::class)
-    suspend fun deleteHistory(payOff: PayOff)
+    @Query("DELETE FROM ${Constants.TABLE_NAME}")
+    suspend fun deleteAllHistory()
 
-    @Query("SELECT * FROM ${Constants.TABLE_NAME} ORDER BY timeStamp DESC")
+    @Query("DELETE FROM ${Constants.TABLE_NAME} WHERE id = :id ")
+    suspend fun deleteItemHistory(id: Long)
+
+    @Query("SELECT * FROM ${Constants.TABLE_NAME} ORDER BY saveDateMilli DESC")
     fun getAllHistory() : Flow<List<PayOff>>
 
-    @Query("SELECT SUM(netBalance) FROM ${Constants.TABLE_NAME}")
+    @Query("SELECT * FROM ${Constants.TABLE_NAME} WHERE saveDateMilli BETWEEN :startDate AND :endDate")
+    fun getHistoryWithDate(startDate: Long, endDate: Long) : Flow<List<PayOff>>
+
+    @Query("SELECT SUM(totalProfit) FROM ${Constants.TABLE_NAME}")
     fun getTotalNetBalance() : Flow<Float>
+
+    @Query("UPDATE ${Constants.TABLE_NAME} SET managerProfit = :managerProfit WHERE id =:id")
+    suspend fun updateManagerProfit(managerProfit: Long, id: Long)
 
 }

@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [PayOff::class],
-    version = 1
+    version = 7
 )
 abstract class HistoryDatabase : RoomDatabase() {
     abstract fun dao() : HistoryDao

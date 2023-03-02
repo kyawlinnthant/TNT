@@ -4,7 +4,7 @@
     package="mdy.klt.myatmyat">
 
     <application
-        android:name=".ui.App"
+        android:name="mdy.klt.myatmyat.ui.App"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -13,9 +13,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MyatMyat"
+        android:windowSoftInputMode="adjustResize"
         tools:targetApi="31">
         <activity
-            android:name=".ui.MainActivity"
+            android:name="mdy.klt.myatmyat.ui.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.MyatMyat">
